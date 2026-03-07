@@ -160,9 +160,11 @@
                 name="gz::sim::systems::JointPositionController">
             <joint_name>r_joint</joint_name>
             <topic>arm/gripper/cmd_pos</topic>
-            <p_gain>50</p_gain>
-            <i_gain>0</i_gain>
+            <p_gain>100</p_gain>
+            <i_gain>30</i_gain>
             <d_gain>0</d_gain>
+            <i_max>5</i_max>
+            <i_min>-5</i_min>
             <cmd_max>10</cmd_max>
             <cmd_min>-10</cmd_min>
         </plugin>
