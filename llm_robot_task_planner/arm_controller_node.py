@@ -41,17 +41,17 @@ POSES = {
     # Arm tucked back, low profile for navigation
     'tuck': [0.0, 0.3, 1.0, 0.8, 0.0],
 
-    # Reach forward and slightly down — hover above a cube in front
-    'pre_grasp': [0.0, -1.0, -0.4, -0.6, 0.0],
+    # Reach forward, hover ~5cm above cube (z≈0.05m)
+    'pre_grasp': [0.0, -1.3, -0.7, -0.3, 0.0],
 
-    # Lower to grasp position — gripper at cube height on floor
-    'grasp': [0.0, -1.2, -0.3, -0.5, 0.0],
+    # Lower to cube center height (z≈0.025m for 5cm cube)
+    'grasp': [0.0, -1.5, -0.5, -0.3, 0.0],
 
     # Lift cube up after grasping
-    'lift': [0.0, -0.3, -0.2, -0.5, 0.0],
+    'lift': [0.0, -0.5, -0.3, -0.3, 0.0],
 
-    # Place position — arm forward and down to release
-    'place': [0.0, -1.0, -0.4, -0.6, 0.0],
+    # Place position — same as pre_grasp height
+    'place': [0.0, -1.3, -0.7, -0.3, 0.0],
 }
 
 # Time to wait after sending a pose command for the PID to settle (seconds)
