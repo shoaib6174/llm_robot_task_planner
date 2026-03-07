@@ -31,3 +31,6 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D025 | 2026-03-08 | S06 | Attach Gazebo sensor to body_cam_link not optical_frame | Gazebo renders along +x of attached frame; optical frame rotation causes incorrect camera view |
 | D026 | 2026-03-08 | S06 | Joint damping=10.0, friction=5.0 on all arm joints | Simulates real servo resistance; prevents gravity collapse before JointPositionController receives first command |
 | D027 | 2026-03-08 | S06 | Cube size 5cm (up from 3cm) | PRD spec says 5–8cm; 3cm cubes too small to reliably detect at room distances |
+| D028 | 2026-03-08 | S07 | PointStamped + tf2_geometry_msgs for 3D projection | Simpler than manual quaternion math; TF2 handles full chain from camera frame to map |
+| D029 | 2026-03-08 | S07 | Accept close-range accuracy as DC4 proof | Far-range errors are AMCL yaw drift (20°), not pipeline bugs; robot approaches < 0.5m for pick/place |
+| D030 | 2026-03-08 | S07 | AMCL 8000 particles, alpha=0.05, 180 beams | Sim has clean odometry (low noise); more particles help in symmetric rooms |

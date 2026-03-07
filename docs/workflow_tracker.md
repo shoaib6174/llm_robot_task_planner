@@ -18,7 +18,7 @@
 | DC1 | Robot spawns and drives with cmd_vel | Verified (no video) | Video clip | S04 |
 | DC2 | Robot navigates room-to-room via Nav2 | Verified (no video) | Video clip | S05 |
 | DC3 | Color-based cube detection with bboxes | ✅ Verified | Screenshots in docs/artifacts/ | S06 |
-| DC4 | Depth pipeline gives correct 3D positions | Not started | Terminal log | — |
+| DC4 | Depth pipeline gives correct 3D positions | ✅ Verified | docs/artifacts/dc4_3d_position_accuracy.md | S07 |
 | DC5 | Arm picks up and places a cube | Not started | Video clip | — |
 | DC6 | LLM decomposes commands into tool calls | Not started | Terminal screenshot | — |
 | DC7 | End-to-end Scenario 1 (simple fetch) | Not started | Demo video | — |
@@ -40,6 +40,7 @@
 | # | Date | Branch | Summary | Worklog |
 |---|------|--------|---------|---------|
 | S06 | 2026-03-08 | perception | Body RGBD camera, HSV color detection, arm damping, DC3 verified (all 4 cube colors) | [S06](worklogs/2026-03-08_S06.md) |
+| S07 | 2026-03-08 | perception | 3D depth pipeline (camera intrinsics + depth + TF2), AMCL tuning, DC4 verified (0.038m close-range) | [S07](worklogs/2026-03-08_S07.md) |
 
 ### Week 3: Integration + Demo
 | # | Date | Branch | Summary | Worklog |
