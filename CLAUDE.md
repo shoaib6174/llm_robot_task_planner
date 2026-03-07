@@ -83,6 +83,7 @@ Rules:
 - Merge to `main` only when the component passes its tests and demo checkpoint
 - Delete branch after merge
 - Never force-push to `main`
+- **Do NOT add `Co-Authored-By: Claude` or any AI attribution in commit messages**
 
 ## Engineering Standards — MANDATORY
 
