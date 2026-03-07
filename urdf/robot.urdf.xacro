@@ -2,17 +2,17 @@
 <robot name="jetrover" xmlns:xacro="http://ros.org/wiki/xacro">
 
     <!-- Include JetRover description files (mecanum chassis + A1 lidar) -->
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/materials.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/inertial_matrix.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/car_mecanum.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/lidar.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/lidar_a1.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/imu.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/depth_camera.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/common.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/connect.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/arm.urdf.xacro"/>
-    <xacro:include filename="$(dirname)/jetrover_description/urdf/gripper.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/materials.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/inertial_matrix.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/car_mecanum.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/lidar.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/lidar_a1.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/imu.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/depth_camera.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/common.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/connect.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/arm.urdf.xacro"/>
+    <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/gripper.urdf.xacro"/>
 
     <!-- ==================== Gazebo Plugins ==================== -->
 
