@@ -79,22 +79,11 @@
 
     <!-- ==================== Arm Joint Controllers ==================== -->
     <!-- PID P-only controllers. D_gain=0 because physical damping=10 provides
-         all needed derivative stabilization. -->
+         all needed derivative stabilization. Unique plugin names to prevent
+         URDF→SDF deduplication. -->
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
-                name="gz::sim::systems::JointPositionController">
-            <joint_name>joint4</joint_name>
-            <topic>arm/joint4/cmd_pos</topic>
-            <p_gain>200</p_gain>
-            <i_gain>0</i_gain>
-            <d_gain>0</d_gain>
-            <cmd_max>40</cmd_max>
-            <cmd_min>-40</cmd_min>
-        </plugin>
-    </gazebo>
-    <gazebo>
-        <plugin filename="gz-sim-joint-position-controller-system"
-                name="gz::sim::systems::JointPositionController">
+                name="joint1_position_controller">
             <joint_name>joint1</joint_name>
             <topic>arm/joint1/cmd_pos</topic>
             <p_gain>200</p_gain>
@@ -106,7 +95,7 @@
     </gazebo>
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
-                name="gz::sim::systems::JointPositionController">
+                name="joint2_position_controller">
             <joint_name>joint2</joint_name>
             <topic>arm/joint2/cmd_pos</topic>
             <p_gain>200</p_gain>
@@ -118,7 +107,7 @@
     </gazebo>
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
-                name="gz::sim::systems::JointPositionController">
+                name="joint3_position_controller">
             <joint_name>joint3</joint_name>
             <topic>arm/joint3/cmd_pos</topic>
             <p_gain>200</p_gain>
@@ -130,7 +119,19 @@
     </gazebo>
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
-                name="gz::sim::systems::JointPositionController">
+                name="joint4_position_controller">
+            <joint_name>joint4</joint_name>
+            <topic>arm/joint4/cmd_pos</topic>
+            <p_gain>200</p_gain>
+            <i_gain>0</i_gain>
+            <d_gain>0</d_gain>
+            <cmd_max>40</cmd_max>
+            <cmd_min>-40</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="joint5_position_controller">
             <joint_name>joint5</joint_name>
             <topic>arm/joint5/cmd_pos</topic>
             <p_gain>100</p_gain>
@@ -145,7 +146,7 @@
     <!-- Only r_joint is actuated; l_joint and all linkage joints mimic it -->
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
-                name="gz::sim::systems::JointPositionController">
+                name="gripper_position_controller">
             <joint_name>r_joint</joint_name>
             <topic>arm/gripper/cmd_pos</topic>
             <p_gain>50</p_gain>
