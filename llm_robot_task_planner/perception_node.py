@@ -40,7 +40,7 @@ DRAW_COLORS = {
     'yellow': (0, 255, 255),
 }
 
-MIN_CONTOUR_AREA = 100
+MIN_CONTOUR_AREA = 30
 
 
 class PerceptionNode(Node):

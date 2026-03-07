@@ -23,8 +23,8 @@
         </inertial>
     </link>
     <joint name="body_cam_joint" type="fixed">
-        <!-- Mounted at front-top of base_link, tilted 30° down (pitch = 0.52 rad) -->
-        <origin xyz="0.12 0.0 0.06" rpy="0 0.52 0"/>
+        <!-- Mounted at front-top of base_link, tilted 15° down (pitch = 0.26 rad) -->
+        <origin xyz="0.12 0.0 0.06" rpy="0 0.26 0"/>
         <parent link="base_link"/>
         <child link="body_cam_link"/>
     </joint>
