@@ -62,6 +62,7 @@
         <sensor name="lidar" type="gpu_lidar">
             <pose>0 0 0 0 0 0</pose>
             <topic>scan</topic>
+            <gz_frame_id>lidar_frame</gz_frame_id>
             <update_rate>5.5</update_rate>
             <always_on>true</always_on>
             <visualize>false</visualize>
@@ -92,6 +93,7 @@
     <gazebo reference="imu_link">
         <sensor name="imu" type="imu">
             <topic>imu</topic>
+            <gz_frame_id>imu_link</gz_frame_id>
             <update_rate>50</update_rate>
             <always_on>true</always_on>
             <imu>
