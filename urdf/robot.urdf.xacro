@@ -78,8 +78,11 @@
     </gazebo>
 
     <!-- ==================== Arm Joint Controllers ==================== -->
-    <!-- PID controllers for arm joints. Damping=10 balances stability with
-         responsiveness. Max velocity = cmd_max/damping = 4 rad/s. -->
+    <!-- PID P-only controllers. D_gain=0 because physical damping=10 provides
+         all needed derivative stabilization. With D>0, P and D terms cancel
+         at saturation on low-inertia links (velocity spikes → D saturates →
+         cancels P → net output ≈ 0). P-only + physical damping gives ζ>>1
+         (heavily overdamped, no oscillation). -->
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
                 name="gz::sim::systems::JointPositionController">
@@ -87,7 +90,7 @@
             <topic>arm/joint1/cmd_pos</topic>
             <p_gain>200</p_gain>
             <i_gain>0</i_gain>
-            <d_gain>20</d_gain>
+            <d_gain>0</d_gain>
             <cmd_max>40</cmd_max>
             <cmd_min>-40</cmd_min>
         </plugin>
@@ -99,7 +102,7 @@
             <topic>arm/joint2/cmd_pos</topic>
             <p_gain>200</p_gain>
             <i_gain>0</i_gain>
-            <d_gain>20</d_gain>
+            <d_gain>0</d_gain>
             <cmd_max>40</cmd_max>
             <cmd_min>-40</cmd_min>
         </plugin>
@@ -111,7 +114,7 @@
             <topic>arm/joint3/cmd_pos</topic>
             <p_gain>200</p_gain>
             <i_gain>0</i_gain>
-            <d_gain>20</d_gain>
+            <d_gain>0</d_gain>
             <cmd_max>40</cmd_max>
             <cmd_min>-40</cmd_min>
         </plugin>
@@ -123,7 +126,7 @@
             <topic>arm/joint4/cmd_pos</topic>
             <p_gain>200</p_gain>
             <i_gain>0</i_gain>
-            <d_gain>20</d_gain>
+            <d_gain>0</d_gain>
             <cmd_max>40</cmd_max>
             <cmd_min>-40</cmd_min>
         </plugin>
@@ -135,7 +138,7 @@
             <topic>arm/joint5/cmd_pos</topic>
             <p_gain>100</p_gain>
             <i_gain>0</i_gain>
-            <d_gain>10</d_gain>
+            <d_gain>0</d_gain>
             <cmd_max>20</cmd_max>
             <cmd_min>-20</cmd_min>
         </plugin>
@@ -150,7 +153,7 @@
             <topic>arm/gripper/cmd_pos</topic>
             <p_gain>50</p_gain>
             <i_gain>0</i_gain>
-            <d_gain>5</d_gain>
+            <d_gain>0</d_gain>
             <cmd_max>10</cmd_max>
             <cmd_min>-10</cmd_min>
         </plugin>
