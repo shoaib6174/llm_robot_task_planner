@@ -54,10 +54,8 @@ POSES = {
     'place': [0.0, -1.0, -0.4, -0.6, 0.0],
 }
 
-# Interpolation step duration (seconds)
-STEP_DURATION = 0.05
-# Number of interpolation steps between poses
-INTERPOLATION_STEPS = 40
+# Time to wait after sending a pose command for the PID to settle (seconds)
+SETTLE_TIME = 2.0
 
 
 class ArmControllerNode(Node):
@@ -177,21 +175,16 @@ class ArmControllerNode(Node):
         self.joint_pubs[5].publish(msg)
         self.gripper_target = value
 
-    def interpolate_to(self, target_joints, gripper_value, steps=INTERPOLATION_STEPS):
-        """Smoothly interpolate from current target to new target."""
-        start = self.target_pose[:]
-        for step in range(1, steps + 1):
-            t = step / steps
-            interp = [s + (e - s) * t for s, e in zip(start, target_joints)]
-            self.send_pose(interp, gripper_value)
-            time.sleep(STEP_DURATION)
+    def move_to(self, target_joints, gripper_value, settle=SETTLE_TIME):
+        """Send target pose and wait for PID to settle."""
+        self.send_pose(target_joints, gripper_value)
+        time.sleep(settle)
 
     def execute_pose(self, pose_name):
-        """Move to a named pose with interpolation."""
+        """Move to a named pose."""
         self.busy = True
         self.publish_status('moving', f'Moving to {pose_name}')
-        target = POSES[pose_name]
-        self.interpolate_to(target, self.gripper_target)
+        self.move_to(POSES[pose_name], self.gripper_target)
         self.publish_status('done', f'Reached {pose_name}')
         self.busy = False
 
@@ -207,23 +200,20 @@ class ArmControllerNode(Node):
 
         # 2. Move to pre-grasp
         self.get_logger().info('Pick: moving to pre_grasp')
-        self.interpolate_to(POSES['pre_grasp'], GRIPPER_OPEN)
-        time.sleep(0.5)
+        self.move_to(POSES['pre_grasp'], GRIPPER_OPEN)
 
         # 3. Lower to grasp position
         self.get_logger().info('Pick: lowering to grasp')
-        self.interpolate_to(POSES['grasp'], GRIPPER_OPEN)
-        time.sleep(0.5)
+        self.move_to(POSES['grasp'], GRIPPER_OPEN)
 
         # 4. Close gripper
         self.get_logger().info('Pick: closing gripper')
         self.send_gripper(GRIPPER_CLOSE)
-        time.sleep(1.0)
+        time.sleep(1.5)
 
         # 5. Lift
         self.get_logger().info('Pick: lifting')
-        self.interpolate_to(POSES['lift'], GRIPPER_CLOSE)
-        time.sleep(0.5)
+        self.move_to(POSES['lift'], GRIPPER_CLOSE)
 
         self.publish_status('done', 'Pick complete')
         self.busy = False
@@ -235,18 +225,16 @@ class ArmControllerNode(Node):
 
         # 1. Move to place position
         self.get_logger().info('Place: moving to place position')
-        self.interpolate_to(POSES['place'], GRIPPER_CLOSE)
-        time.sleep(0.5)
+        self.move_to(POSES['place'], GRIPPER_CLOSE)
 
         # 2. Open gripper
         self.get_logger().info('Place: opening gripper')
         self.send_gripper(GRIPPER_OPEN)
-        time.sleep(1.0)
+        time.sleep(1.5)
 
         # 3. Return to home
         self.get_logger().info('Place: returning home')
-        self.interpolate_to(POSES['home'], GRIPPER_OPEN)
-        time.sleep(0.5)
+        self.move_to(POSES['home'], GRIPPER_OPEN)
 
         self.publish_status('done', 'Place complete')
         self.busy = False
