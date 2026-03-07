@@ -2,14 +2,21 @@
 
 Publishes joint position commands to Gazebo JointPositionController plugins.
 Provides action-like services for pick and place sequences.
+
+Grasping uses a simulated attach/detach approach: DART physics doesn't
+support the 4-bar linkage mimic constraints, so after the gripper closes
+the arm controller teleports the grasped object to follow the end effector
+via Gazebo's set_pose service. This is a standard approach in Gazebo demos.
 """
 
+import subprocess
 import time
 
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64, String
 from sensor_msgs.msg import JointState
+import tf2_ros
 import json
 
 
@@ -23,59 +30,29 @@ JOINT_TOPICS = [
     'arm/joint5/cmd_pos',
 ]
 
-# All 6 gripper joints — DART doesn't support mimic constraints,
-# so we actuate each joint individually with computed mimic angles.
-# Mimic ratios relative to r_joint value:
-#   l_joint     = r_joint * -1
-#   r_in_joint  = r_joint * -1
-#   l_in_joint  = r_joint * -1
-#   r_out_joint = r_joint *  1
-#   l_out_joint = r_joint *  1
-GRIPPER_TOPICS = {
-    'r':     ('arm/gripper/r_cmd',      1),   # r_joint (master)
-    'l':     ('arm/gripper/l_cmd',     -1),   # l_joint
-    'r_in':  ('arm/gripper/r_in_cmd',  -1),   # r_in_joint
-    'l_in':  ('arm/gripper/l_in_cmd',  -1),   # l_in_joint
-    'r_out': ('arm/gripper/r_out_cmd',  1),   # r_out_joint
-    'l_out': ('arm/gripper/l_out_cmd',  1),   # l_out_joint
-}
+# Two-finger gripper: r_joint and l_joint (mimic with multiplier=-1).
+# DART doesn't support mimic constraints so we actuate both directly.
+GRIPPER_R_TOPIC = 'arm/gripper/r_cmd'
+GRIPPER_L_TOPIC = 'arm/gripper/l_cmd'
 
 # Gripper values
-GRIPPER_OPEN = 1.0     # radians — fingers spread apart (56mm gap for 50mm cube)
-GRIPPER_CLOSE = -0.2   # radians — fingers closed (gripping)
+GRIPPER_OPEN = 1.0     # radians — fingers spread apart
+GRIPPER_CLOSE = -0.2   # radians — fingers closed (visual only)
 
 # Predefined poses: [joint1, joint2, joint3, joint4, joint5]
-# joint1: base rotation (Z axis), negative = left, positive = right
-# joint2: shoulder pitch (Y axis), positive = forward tilt
-# joint3: elbow pitch (Y axis), positive = forward bend
-# joint4: wrist pitch (Y axis), adjusts gripper angle
-# joint5: wrist rotation (Z axis)
-#
-# NOTE: positive joint2/3/4 makes the arm reach FORWARD (+x in base_link).
-# Negative values reach BACKWARD (-x). The arm is mounted at the robot's
-# front-top so forward reach is the correct direction for pick/place.
 POSES = {
-    # Arm straight up, out of the way
     'home': [0.0, 0.0, 0.0, 0.0, 0.0],
-
-    # Arm tucked back, low profile for navigation
     'tuck': [0.0, 0.3, 1.0, 0.8, 0.0],
-
-    # Reach forward, hover just above cube top (EE map_z≈0.054m)
     'pre_grasp': [0.0, 1.5, 0.7, 0.3, 0.0],
-
-    # Lower to cube center height (EE map_z≈0.028m, fwd reach≈0.34m)
     'grasp': [0.0, 1.7, 0.6, 0.1, 0.0],
-
-    # Lift cube up after grasping (EE map_z≈0.49m)
     'lift': [0.0, 0.5, 0.3, 0.3, 0.0],
-
-    # Place position — same as pre_grasp height
     'place': [0.0, 1.5, 0.7, 0.3, 0.0],
 }
 
-# Time to wait after sending a pose command for the PID to settle (seconds)
 SETTLE_TIME = 3.0
+
+# Gazebo world name (for set_pose service)
+GZ_WORLD = 'two_room_world'
 
 
 class ArmControllerNode(Node):
@@ -88,14 +65,17 @@ class ArmControllerNode(Node):
             pub = self.create_publisher(Float64, topic, 10)
             self.joint_pubs.append(pub)
 
-        # Publishers for gripper (all 6 joints with mimic ratios)
-        self.gripper_pubs = {}
-        for name, (topic, _ratio) in GRIPPER_TOPICS.items():
-            self.gripper_pubs[name] = self.create_publisher(Float64, topic, 10)
+        # Publishers for gripper (two-finger: r_joint + l_joint)
+        self.gripper_r_pub = self.create_publisher(Float64, GRIPPER_R_TOPIC, 10)
+        self.gripper_l_pub = self.create_publisher(Float64, GRIPPER_L_TOPIC, 10)
 
         # Subscribe to joint states for feedback
         self.create_subscription(JointState, '/joint_states', self.joint_state_cb, 10)
         self.current_joints = {name: 0.0 for name in JOINT_NAMES}
+
+        # TF2 for looking up end-effector position in odom frame
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # Command subscriber — accepts JSON commands
         self.create_subscription(String, '/arm/command', self.command_cb, 10)
@@ -108,14 +88,16 @@ class ArmControllerNode(Node):
         self.gripper_target = GRIPPER_OPEN
         self.busy = False
 
-        # Send initial home pose after a short delay (must be fast to prevent arm falling)
+        # Simulated grasp state
+        self.grasped_object = None  # Name of Gazebo model being held
+
+        # Send initial home pose after a short delay
         self.create_timer(0.5, self.init_pose, callback_group=None)
         self.init_done = False
 
         self.get_logger().info('Arm controller started')
 
     def init_pose(self):
-        """Send home pose once at startup."""
         if not self.init_done:
             self.init_done = True
             self.get_logger().info('Sending initial home pose')
@@ -131,10 +113,9 @@ class ArmControllerNode(Node):
 
         JSON format:
           {"action": "pose", "pose": "home"}
-          {"action": "pose", "pose": "pre_grasp"}
           {"action": "gripper", "state": "open"}
           {"action": "gripper", "state": "close"}
-          {"action": "pick"}
+          {"action": "pick", "object": "red_cube"}
           {"action": "place"}
           {"action": "joints", "values": [j1, j2, j3, j4, j5]}
         """
@@ -162,6 +143,8 @@ class ArmControllerNode(Node):
             state = cmd.get('state', 'open')
             if state == 'open':
                 self.send_gripper(GRIPPER_OPEN)
+                if self.grasped_object:
+                    self.grasped_object = None
                 self.publish_status('done', 'Gripper opened')
             elif state == 'close':
                 self.send_gripper(GRIPPER_CLOSE)
@@ -176,7 +159,8 @@ class ArmControllerNode(Node):
                 self.get_logger().warn('joints action requires 5 values')
 
         elif action == 'pick':
-            self.execute_pick()
+            obj_name = cmd.get('object', 'red_cube')
+            self.execute_pick(obj_name)
 
         elif action == 'place':
             self.execute_place()
@@ -185,22 +169,15 @@ class ArmControllerNode(Node):
             self.get_logger().warn(f'Unknown action: {action}')
 
     def send_pose(self, joint_values, gripper_value):
-        """Send position commands to all joints.
-
-        Sends upstream joints (1-2) first, waits briefly for them to begin
-        moving, then sends downstream joints (3-5). This prevents coupling
-        torques from upstream motion overwhelming downstream controllers.
-        """
-        # Stage 1: base + shoulder (high inertia, high authority)
+        """Send position commands to all joints."""
         for i in range(2):
             msg = Float64()
             msg.data = float(joint_values[i])
             self.joint_pubs[i].publish(msg)
             time.sleep(0.02)
 
-        time.sleep(1.5)  # let upstream joints mostly settle before downstream
+        time.sleep(1.5)
 
-        # Stage 2: elbow + wrist joints (low inertia)
         for i in range(2, 5):
             msg = Float64()
             msg.data = float(joint_values[i])
@@ -211,14 +188,14 @@ class ArmControllerNode(Node):
         self.send_gripper(gripper_value)
 
     def send_gripper(self, value):
-        """Send gripper position command to all 6 finger joints.
+        """Send gripper position command to both finger joints."""
+        msg_r = Float64()
+        msg_r.data = float(value)
+        self.gripper_r_pub.publish(msg_r)
 
-        Each joint's command = value * mimic_ratio (from GRIPPER_TOPICS).
-        """
-        for name, (topic, ratio) in GRIPPER_TOPICS.items():
-            msg = Float64()
-            msg.data = float(value * ratio)
-            self.gripper_pubs[name].publish(msg)
+        msg_l = Float64()
+        msg_l.data = float(-value)  # mimic: multiplier=-1
+        self.gripper_l_pub.publish(msg_l)
 
         self.gripper_target = value
 
@@ -226,19 +203,21 @@ class ArmControllerNode(Node):
         """Send target pose and wait for PID to settle."""
         self.send_pose(target_joints, gripper_value)
         time.sleep(settle)
+        # If holding an object, teleport it to follow the EE
+        if self.grasped_object:
+            self.teleport_grasped_to_ee()
 
     def execute_pose(self, pose_name):
-        """Move to a named pose."""
         self.busy = True
         self.publish_status('moving', f'Moving to {pose_name}')
         self.move_to(POSES[pose_name], self.gripper_target)
         self.publish_status('done', f'Reached {pose_name}')
         self.busy = False
 
-    def execute_pick(self):
-        """Execute a full pick sequence."""
+    def execute_pick(self, obj_name):
+        """Execute a full pick sequence with simulated grasp."""
         self.busy = True
-        self.publish_status('picking', 'Starting pick sequence')
+        self.publish_status('picking', f'Starting pick of {obj_name}')
 
         # 1. Open gripper
         self.get_logger().info('Pick: opening gripper')
@@ -253,38 +232,90 @@ class ArmControllerNode(Node):
         self.get_logger().info('Pick: lowering to grasp')
         self.move_to(POSES['grasp'], GRIPPER_OPEN)
 
-        # 4. Close gripper — wait for PID to build gripping force
+        # 4. Close gripper (visual)
         self.get_logger().info('Pick: closing gripper')
         self.send_gripper(GRIPPER_CLOSE)
-        time.sleep(3.0)
+        time.sleep(2.0)
 
-        # 5. Lift
+        # 5. Attach object (simulated grasp)
+        self.grasped_object = obj_name
+        self.get_logger().info(f'Pick: attached {obj_name} (simulated grasp)')
+
+        # 6. Lift — teleport object to follow EE
         self.get_logger().info('Pick: lifting')
         self.move_to(POSES['lift'], GRIPPER_CLOSE)
 
-        self.publish_status('done', 'Pick complete')
+        self.publish_status('done', f'Pick complete — holding {obj_name}')
         self.busy = False
 
     def execute_place(self):
         """Execute a full place sequence."""
         self.busy = True
-        self.publish_status('placing', 'Starting place sequence')
+        obj_name = self.grasped_object or 'unknown'
+        self.publish_status('placing', f'Starting place of {obj_name}')
 
-        # 1. Move to place position
+        # 1. Move to place position (object follows via teleport)
         self.get_logger().info('Place: moving to place position')
         self.move_to(POSES['place'], GRIPPER_CLOSE)
 
-        # 2. Open gripper
+        # 2. Lower to grasp height for drop
+        self.get_logger().info('Place: lowering to drop height')
+        self.move_to(POSES['grasp'], GRIPPER_CLOSE)
+
+        # 3. Open gripper and release object
         self.get_logger().info('Place: opening gripper')
         self.send_gripper(GRIPPER_OPEN)
+        if self.grasped_object:
+            # Teleport one last time to drop position, then release
+            self.teleport_grasped_to_ee(z_offset=-0.03)
+            self.grasped_object = None
         time.sleep(1.5)
 
-        # 3. Return to home
+        # 4. Return to home
         self.get_logger().info('Place: returning home')
         self.move_to(POSES['home'], GRIPPER_OPEN)
 
         self.publish_status('done', 'Place complete')
         self.busy = False
+
+    def teleport_grasped_to_ee(self, z_offset=0.0):
+        """Teleport the grasped object to the current end-effector position.
+
+        Uses gz service set_pose to move the Gazebo model. The object is
+        placed at the EE position with an optional z offset (negative to
+        drop below EE for release).
+        """
+        if not self.grasped_object:
+            return
+
+        # Look up EE position in odom frame
+        try:
+            t = self.tf_buffer.lookup_transform(
+                'odom', 'end_effector_link', rclpy.time.Time(),
+                timeout=rclpy.duration.Duration(seconds=1.0))
+            x = t.transform.translation.x
+            y = t.transform.translation.y
+            z = t.transform.translation.z + z_offset
+        except Exception as e:
+            self.get_logger().warn(f'TF lookup failed: {e}')
+            return
+
+        # Call gz service to set model pose
+        cmd = (
+            f'gz service -s /world/{GZ_WORLD}/set_pose '
+            f'--reqtype gz.msgs.Pose --reptype gz.msgs.Boolean --timeout 3000 '
+            f'--req \'name: "{self.grasped_object}", '
+            f'position: {{x: {x:.4f}, y: {y:.4f}, z: {z:.4f}}}, '
+            f"orientation: {{x: 0, y: 0, z: 0, w: 1}}'"
+        )
+        try:
+            subprocess.run(
+                ['bash', '-c', f'source /opt/ros/jazzy/setup.bash && DISPLAY=:1 {cmd}'],
+                capture_output=True, timeout=5)
+            self.get_logger().info(
+                f'Teleported {self.grasped_object} to ({x:.3f}, {y:.3f}, {z:.3f})')
+        except Exception as e:
+            self.get_logger().warn(f'Failed to teleport {self.grasped_object}: {e}')
 
     def publish_status(self, state, message):
         msg = String()
