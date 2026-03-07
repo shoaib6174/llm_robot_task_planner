@@ -1,7 +1,7 @@
 """Perception node: detects colored cubes from RGBD camera feed.
 
 Uses HSV color segmentation for reliable detection in simulation.
-Publishes annotated images and detection results.
+Publishes annotated images and detection results with 3D world positions.
 """
 
 import json
@@ -10,9 +10,13 @@ import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
+from rclpy.time import Time
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import String
 from cv_bridge import CvBridge
+from tf2_ros import Buffer, TransformListener
+from geometry_msgs.msg import PointStamped
+import tf2_geometry_msgs  # noqa: F401 — registers PointStamped transform
 
 
 # HSV ranges for each cube color (tuned for Gazebo rendering)
@@ -60,6 +64,10 @@ class PerceptionNode(Node):
         self.detection_pub = self.create_publisher(String, '/detections', 10)
         self.annotated_pub = self.create_publisher(Image, '/detections/image', 10)
 
+        # TF2 for projecting to world frame
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
         # State
         self.latest_depth = None
         self.camera_info = None
@@ -99,8 +107,14 @@ class PerceptionNode(Node):
             self.get_logger().warn(f'Annotated image publish failed: {e}')
 
         if detections:
-            names = [d['color'] for d in detections]
-            self.get_logger().info(f'Detected: {names}', throttle_duration_sec=2.0)
+            summary = []
+            for d in detections:
+                if 'position_map' in d:
+                    px, py, pz = d['position_map']
+                    summary.append(f"{d['color']}@({px:.2f},{py:.2f})")
+                else:
+                    summary.append(d['color'])
+            self.get_logger().info(f'Detected: {summary}', throttle_duration_sec=2.0)
 
     def detect_cubes(self, image: np.ndarray) -> list:
         """Detect colored cubes using HSV segmentation."""
@@ -137,11 +151,18 @@ class PerceptionNode(Node):
                     'confidence': 1.0,
                 }
 
-                # Add depth if available
+                # Add depth and 3D position if available
                 if self.latest_depth is not None:
                     depth_val = self._get_depth_at(cx, cy)
                     if depth_val is not None and depth_val > 0:
                         detection['depth_m'] = round(float(depth_val), 3)
+                        world_pos = self._project_to_world(cx, cy, depth_val)
+                        if world_pos is not None:
+                            detection['position_map'] = [
+                                round(world_pos[0], 3),
+                                round(world_pos[1], 3),
+                                round(world_pos[2], 3),
+                            ]
 
                 detections.append(detection)
 
@@ -163,6 +184,41 @@ class PerceptionNode(Node):
             return None
         return float(np.median(valid))
 
+    def _project_to_world(self, cx: int, cy: int, depth: float):
+        """Project pixel (cx, cy) at given depth to map frame using camera intrinsics + TF2.
+
+        Returns (x, y, z) in map frame, or None if transform unavailable.
+        """
+        if self.camera_info is None:
+            return None
+
+        # Camera intrinsics from K matrix [fx, 0, cx; 0, fy, cy; 0, 0, 1]
+        k = self.camera_info.k
+        fx, fy = k[0], k[4]
+        cx0, cy0 = k[2], k[5]
+
+        if fx == 0 or fy == 0:
+            return None
+
+        # Project pixel to 3D point in optical frame (z-forward, x-right, y-down)
+        x_cam = (cx - cx0) * depth / fx
+        y_cam = (cy - cy0) * depth / fy
+        z_cam = depth
+
+        # Build a PointStamped in the camera optical frame
+        pt = PointStamped()
+        pt.header.frame_id = self.camera_info.header.frame_id
+        pt.header.stamp = Time()  # use latest available transform
+        pt.point.x = x_cam
+        pt.point.y = y_cam
+        pt.point.z = z_cam
+
+        try:
+            pt_map = self.tf_buffer.transform(pt, 'map', timeout=rclpy.duration.Duration(seconds=0.1))
+            return (pt_map.point.x, pt_map.point.y, pt_map.point.z)
+        except Exception:
+            return None
+
     def draw_detections(self, image: np.ndarray, detections: list) -> np.ndarray:
         """Draw bounding boxes and labels on the image."""
         annotated = image.copy()
@@ -172,7 +228,10 @@ class PerceptionNode(Node):
             cv2.rectangle(annotated, (x, y), (x + w, y + h), color, 2)
 
             label = f"{det['color']} cube"
-            if 'depth_m' in det:
+            if 'position_map' in det:
+                px, py, pz = det['position_map']
+                label += f" ({px:.1f},{py:.1f})"
+            elif 'depth_m' in det:
                 label += f" {det['depth_m']:.2f}m"
 
             # Label background
