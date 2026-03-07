@@ -34,3 +34,8 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D028 | 2026-03-08 | S07 | PointStamped + tf2_geometry_msgs for 3D projection | Simpler than manual quaternion math; TF2 handles full chain from camera frame to map |
 | D029 | 2026-03-08 | S07 | Accept close-range accuracy as DC4 proof | Far-range errors are AMCL yaw drift (20°), not pipeline bugs; robot approaches < 0.5m for pick/place |
 | D030 | 2026-03-08 | S07 | AMCL 8000 particles, alpha=0.05, 180 beams | Sim has clean odometry (low noise); more particles help in symmetric rooms |
+| D031 | 2026-03-08 | S08 | PI control (not P-only) for arm joints | P-only left ~10% steady-state error from gravity/friction; I term with i_max clamping eliminates it |
+| D032 | 2026-03-08 | S08 | Stage joint commands (upstream first, 1.5s delay) | Simultaneous motion caused coupling torques that overwhelmed low-inertia downstream controllers |
+| D033 | 2026-03-08 | S08 | Gripper damping=0.001 (extremely low) | r_link inertia ~4e-7 kg·m²; even damping=0.5 creates ratio >1M causing DART solver numerical lockup |
+| D034 | 2026-03-08 | S08 | D_gain=0 for all joints, rely on physical damping | On low-inertia links, velocity spikes instantly; D term saturates at cmd_max opposing P, net PID ≈ 0 |
+| D035 | 2026-03-08 | S08 | Accept joint5 coupling drift from gripper | Cosmetic; wrist rotates ~0.25 rad during gripper operation due to shared Z axis; doesn't affect grasping |
