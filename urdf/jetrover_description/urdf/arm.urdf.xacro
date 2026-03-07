@@ -224,15 +224,6 @@
       </geometry>
       <material name="green"/>
     </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://jetrover_description/meshes/arm/link4_collision.stl" />
-      </geometry>
-    </collision>
   </link>
   <joint
     name="joint4"
@@ -279,15 +270,6 @@
       </geometry>
       <material name="black"/>
     </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://jetrover_description/meshes/arm/servo_link2_collision.stl" />
-      </geometry>
-    </collision>
   </link>
   <joint
     name="servo_joint2"
