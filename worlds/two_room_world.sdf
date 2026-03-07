@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sdf version="1.8">
+  <world name="two_room_world">
+
+    <!-- Physics -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type="adiabatic"/>
+
+    <!-- Plugins -->
+    <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
+    <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
+    <plugin name="gz::sim::systems::SceneBroadcaster" filename="gz-sim-scene-broadcaster-system"/>
+    <plugin name="gz::sim::systems::Contact" filename="gz-sim-contact-system"/>
+    <plugin name="gz::sim::systems::Imu" filename="gz-sim-imu-system"/>
+    <plugin name="gz::sim::systems::Sensors" filename="gz-sim-sensors-system">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Scene -->
+    <scene>
+      <grid>false</grid>
+      <ambient>0.5 0.5 0.5 1</ambient>
+      <background>0.7 0.85 1.0 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <!-- GUI: initial camera looking down at both rooms -->
+    <gui fullscreen="false">
+      <plugin name="3D View" filename="GzScene3D">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">0</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.5 0.5 0.5</ambient_light>
+        <background_color>0.7 0.85 1.0</background_color>
+        <camera_pose>4 -4 8 0 0.9 1.57</camera_pose>
+      </plugin>
+      <plugin name="World control" filename="WorldControl">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">0</property>
+          <property type="bool" key="resizable">0</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <play_pause>1</play_pause>
+        <step>1</step>
+        <start_paused>0</start_paused>
+      </plugin>
+      <plugin name="World stats" filename="WorldStats">
+        <gz-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">0</property>
+          <property type="bool" key="resizable">0</property>
+          <property type="double" key="height">110</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <sim_time>1</sim_time>
+        <real_time>1</real_time>
+        <real_time_factor>1</real_time_factor>
+        <iterations>1</iterations>
+      </plugin>
+      <plugin name="Entity tree" filename="EntityTree"/>
+    </gui>
+
+    <!-- ==================== Lighting ==================== -->
+
+    <!-- Sun -->
+    <light name="sun" type="directional">
+      <pose>0 0 500 0 0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <intensity>1</intensity>
+      <direction>0.001 0.625 -0.78</direction>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <attenuation>
+        <range>2000</range>
+        <constant>1</constant>
+        <linear>0</linear>
+        <quadratic>0</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- Room A ceiling light -->
+    <light name="light_room_a" type="point">
+      <pose>2 2 2.4 0 0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>10</range>
+        <constant>0.3</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- Room B ceiling light -->
+    <light name="light_room_b" type="point">
+      <pose>6 2 2.4 0 0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>10</range>
+        <constant>0.3</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- ==================== Ground Plane ==================== -->
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== Room Floor Panels ==================== -->
+    <!-- Thin colored panels on top of ground to visually distinguish rooms -->
+
+    <!-- Room A floor (light beige) -->
+    <model name="floor_room_a">
+      <static>true</static>
+      <pose>2 2 0.001 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box><size>4 4 0.002</size></box>
+          </geometry>
+          <material>
+            <ambient>0.85 0.82 0.75 1</ambient>
+            <diffuse>0.85 0.82 0.75 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Room B floor (light gray-blue) -->
+    <model name="floor_room_b">
+      <static>true</static>
+      <pose>6 2 0.001 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box><size>4 4 0.002</size></box>
+          </geometry>
+          <material>
+            <ambient>0.78 0.8 0.85 1</ambient>
+            <diffuse>0.78 0.8 0.85 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== Walls ==================== -->
+    <!--
+      Layout (top view):
+
+      y=4  +==================+=================+
+           |                  |                 |
+           |     Room A       |     Room B      |
+           |   (0-4, 0-4)     |   (4-8, 0-4)   |
+           |                  |                 |
+           |              door (1m)             |
+           |            y=1.5 to 2.5            |
+           |                  |                 |
+      y=0  +==================+=================+
+           x=0               x=4               x=8
+
+      Wall thickness: 0.15m, height: 2.5m
+    -->
+
+    <!-- South wall (y=0, full width) -->
+    <model name="wall_south">
+      <static>true</static>
+      <pose>4 -0.075 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>8.15 0.15 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>8.15 0.15 2.5</size></box></geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.9 0.9 0.85 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- North wall (y=4, full width) -->
+    <model name="wall_north">
+      <static>true</static>
+      <pose>4 4.075 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>8.15 0.15 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>8.15 0.15 2.5</size></box></geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.9 0.9 0.85 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- West wall (x=0) -->
+    <model name="wall_west">
+      <static>true</static>
+      <pose>-0.075 2 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 4.3 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 4.3 2.5</size></box></geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.9 0.9 0.85 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East wall (x=8) -->
+    <model name="wall_east">
+      <static>true</static>
+      <pose>8.075 2 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 4.3 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 4.3 2.5</size></box></geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.9 0.9 0.85 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Dividing wall - bottom segment (y=0 to y=1.5) -->
+    <model name="wall_divider_south">
+      <static>true</static>
+      <pose>4 0.75 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 1.5 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 1.5 2.5</size></box></geometry>
+          <material>
+            <ambient>0.85 0.85 0.8 1</ambient>
+            <diffuse>0.85 0.85 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Dividing wall - top segment (y=2.5 to y=4) -->
+    <model name="wall_divider_north">
+      <static>true</static>
+      <pose>4 3.25 1.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 1.5 2.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 1.5 2.5</size></box></geometry>
+          <material>
+            <ambient>0.85 0.85 0.8 1</ambient>
+            <diffuse>0.85 0.85 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== Colored Cubes ==================== -->
+    <!-- 6cm cubes (0.06m), mass 0.1kg, placed on floor (z = half-height = 0.03) -->
+    <!-- Inertia for uniform cube: I = (1/6)*m*s^2 = (1/6)*0.1*0.0036 = 0.00006 -->
+
+    <!-- Red cube - Room A -->
+    <model name="red_cube">
+      <pose>2.5 2.5 0.03 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.00006</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.00006</iyy>
+            <iyz>0</iyz>
+            <izz>0.00006</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <material>
+            <ambient>0.8 0.0 0.0 1</ambient>
+            <diffuse>0.9 0.1 0.1 1</diffuse>
+            <specular>0.4 0.4 0.4 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Blue cube - Room A -->
+    <model name="blue_cube">
+      <pose>1.0 1.0 0.03 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.00006</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.00006</iyy>
+            <iyz>0</iyz>
+            <izz>0.00006</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <material>
+            <ambient>0.0 0.0 0.8 1</ambient>
+            <diffuse>0.1 0.1 0.9 1</diffuse>
+            <specular>0.4 0.4 0.4 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Green cube - Room B -->
+    <model name="green_cube">
+      <pose>6.0 2.5 0.03 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.00006</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.00006</iyy>
+            <iyz>0</iyz>
+            <izz>0.00006</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <material>
+            <ambient>0.0 0.7 0.0 1</ambient>
+            <diffuse>0.1 0.8 0.1 1</diffuse>
+            <specular>0.4 0.4 0.4 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Yellow cube - Room B -->
+    <model name="yellow_cube">
+      <pose>6.5 1.0 0.03 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.00006</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.00006</iyy>
+            <iyz>0</iyz>
+            <izz>0.00006</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <material>
+            <ambient>0.8 0.8 0.0 1</ambient>
+            <diffuse>0.9 0.9 0.1 1</diffuse>
+            <specular>0.4 0.4 0.4 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
