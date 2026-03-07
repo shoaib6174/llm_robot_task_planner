@@ -9,14 +9,14 @@
 
 | Blocker | Since Session | Details |
 |---------|--------------|---------|
-| Return navigation (B→A) fails | S05 | Planner can't find path back; inflation_radius too large for doorway approach angle |
+| (none) | — | — |
 
 ## Demo Checkpoints
 
 | # | Checkpoint | Status | Artifact | Completed In |
 |---|-----------|--------|----------|-------------|
 | DC1 | Robot spawns and drives with cmd_vel | Verified (no video) | Video clip | S04 |
-| DC2 | Robot navigates room-to-room via Nav2 | In Progress (A→B works) | Video clip | — |
+| DC2 | Robot navigates room-to-room via Nav2 | Verified (no video) | Video clip | S05 |
 | DC3 | YOLO detects colored cubes | Not started | Screenshot | — |
 | DC4 | Depth pipeline gives correct 3D positions | Not started | Terminal log | — |
 | DC5 | Arm picks up and places a cube | Not started | Video clip | — |
