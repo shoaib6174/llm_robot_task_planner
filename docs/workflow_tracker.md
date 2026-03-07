@@ -32,6 +32,7 @@
 |---|------|--------|---------|---------|
 | S01 | 2026-03-07 | main | niro-1 env setup: ROS 2 Jazzy, Gazebo Harmonic, Nav2, PyTorch cu128, venv | [S01](worklogs/2026-03-07_S01.md) |
 | S02 | 2026-03-07 | main | Blog formatting fixes for Medium, cover image with real logos, LinkedIn caption | [S02](worklogs/2026-03-07_S02.md) |
+| S03 | 2026-03-07 | gazebo-world | Two-room Gazebo world with 4 colored cubes, semantic map config, validated on niro-1 | [S03](worklogs/2026-03-07_S03.md) |
 
 ### Week 2: Perception + Arm + Agent
 | # | Date | Branch | Summary | Worklog |
