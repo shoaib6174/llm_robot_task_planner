@@ -33,6 +33,8 @@ setup(
          glob(os.path.join('config', '*.yaml'))),
         (os.path.join('share', package_name, 'urdf'),
          glob(os.path.join('urdf', '*.xacro'))),
+        (os.path.join('share', package_name, 'maps'),
+         glob(os.path.join('maps', '*'))),
     ] + jetrover_data_files,
     install_requires=['setuptools'],
     zip_safe=True,
@@ -43,6 +45,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'odom_to_tf = llm_robot_task_planner.odom_to_tf_node:main',
         ],
     },
 )

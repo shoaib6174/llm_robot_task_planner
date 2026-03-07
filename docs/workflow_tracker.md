@@ -15,8 +15,8 @@
 
 | # | Checkpoint | Status | Artifact | Completed In |
 |---|-----------|--------|----------|-------------|
-| DC1 | Robot spawns and drives with cmd_vel | Not started | Video clip | — |
-| DC2 | Robot navigates room-to-room via Nav2 | Not started | Video clip | — |
+| DC1 | Robot spawns and drives with cmd_vel | Verified (no video) | Video clip | S04 |
+| DC2 | Robot navigates room-to-room via Nav2 | Verified (no video) | Video clip | S05 |
 | DC3 | YOLO detects colored cubes | Not started | Screenshot | — |
 | DC4 | Depth pipeline gives correct 3D positions | Not started | Terminal log | — |
 | DC5 | Arm picks up and places a cube | Not started | Video clip | — |
@@ -34,6 +34,7 @@
 | S02 | 2026-03-07 | main | Blog formatting fixes for Medium, cover image with real logos, LinkedIn caption | [S02](worklogs/2026-03-07_S02.md) |
 | S03 | 2026-03-07 | gazebo-world | Two-room Gazebo world with 4 colored cubes, semantic map config, validated on niro-1 | [S03](worklogs/2026-03-07_S03.md) |
 | S04 | 2026-03-07 | robot-urdf | JetRover URDF integration, sim launch file, robot spawns in Gazebo, cubes resized to 3cm | [S04](worklogs/2026-03-07_S04.md) |
+| S05 | 2026-03-07 | navigation | Nav2 stack, static map, odom_to_tf TF fix, A→B navigation succeeds, B→A needs costmap tuning | [S05](worklogs/2026-03-07_S05.md) |
 
 ### Week 2: Perception + Arm + Agent
 | # | Date | Branch | Summary | Worklog |
