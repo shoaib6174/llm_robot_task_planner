@@ -227,10 +227,10 @@ class ArmControllerNode(Node):
         self.get_logger().info('Pick: lowering to grasp')
         self.move_to(POSES['grasp'], GRIPPER_OPEN)
 
-        # 4. Close gripper
+        # 4. Close gripper — wait for PID to build gripping force
         self.get_logger().info('Pick: closing gripper')
         self.send_gripper(GRIPPER_CLOSE)
-        time.sleep(1.5)
+        time.sleep(3.0)
 
         # 5. Lift
         self.get_logger().info('Pick: lifting')
