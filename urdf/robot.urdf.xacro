@@ -141,6 +141,21 @@
         </plugin>
     </gazebo>
 
+    <!-- ==================== Gripper Controller ==================== -->
+    <!-- Only r_joint is actuated; l_joint and all linkage joints mimic it -->
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>r_joint</joint_name>
+            <topic>arm/gripper/cmd_pos</topic>
+            <p_gain>50</p_gain>
+            <i_gain>2</i_gain>
+            <d_gain>5</d_gain>
+            <cmd_max>5</cmd_max>
+            <cmd_min>-5</cmd_min>
+        </plugin>
+    </gazebo>
+
     <!-- ==================== Sensors ==================== -->
 
     <!-- 2D LiDAR on lidar_frame (A1 lidar: 360°, 12m range, ~5.5Hz) -->
