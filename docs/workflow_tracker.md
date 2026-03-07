@@ -1,5 +1,5 @@
 # LLM Robot Task Planner — Workflow Tracker
-## Last Updated: 2026-03-07
+## Last Updated: 2026-03-08
 
 ## Project
 **LLM-Powered Robot Task Planner** — Natural language commands -> LLM task decomposition -> ROS 2 + Gazebo pick-and-place demo.
@@ -17,7 +17,7 @@
 |---|-----------|--------|----------|-------------|
 | DC1 | Robot spawns and drives with cmd_vel | Verified (no video) | Video clip | S04 |
 | DC2 | Robot navigates room-to-room via Nav2 | Verified (no video) | Video clip | S05 |
-| DC3 | YOLO detects colored cubes | Not started | Screenshot | — |
+| DC3 | Color-based cube detection with bboxes | ✅ Verified | Screenshots in docs/artifacts/ | S06 |
 | DC4 | Depth pipeline gives correct 3D positions | Not started | Terminal log | — |
 | DC5 | Arm picks up and places a cube | Not started | Video clip | — |
 | DC6 | LLM decomposes commands into tool calls | Not started | Terminal screenshot | — |
@@ -39,6 +39,7 @@
 ### Week 2: Perception + Arm + Agent
 | # | Date | Branch | Summary | Worklog |
 |---|------|--------|---------|---------|
+| S06 | 2026-03-08 | perception | Body RGBD camera, HSV color detection, arm damping, DC3 verified (all 4 cube colors) | [S06](worklogs/2026-03-08_S06.md) |
 
 ### Week 3: Integration + Demo
 | # | Date | Branch | Summary | Worklog |

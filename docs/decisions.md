@@ -26,3 +26,8 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D020 | 2026-03-07 | S05 | RPP controller instead of DWB | DWB fails on 180° U-turns in confined spaces; RPP follows path directly |
 | D021 | 2026-03-07 | S05 | Cylinder wheel collisions | Mecanum STL collisions cause lateral drift with DiffDrive; cylinders give predictable behavior |
 | D022 | 2026-03-07 | S05 | Disable RPP collision detection | RPP collision check uses local costmap which has obstacle_layer, blocking doorway traversal |
+| D023 | 2026-03-08 | S06 | HSV color detection instead of YOLO | COCO-pretrained YOLO doesn't detect "cubes"; HSV is reliable in simulation with known colors |
+| D024 | 2026-03-08 | S06 | Fixed body camera for perception | Arm camera requires stable joint positioning; body cam gives consistent view for navigation scanning |
+| D025 | 2026-03-08 | S06 | Attach Gazebo sensor to body_cam_link not optical_frame | Gazebo renders along +x of attached frame; optical frame rotation causes incorrect camera view |
+| D026 | 2026-03-08 | S06 | Joint damping=10.0, friction=5.0 on all arm joints | Simulates real servo resistance; prevents gravity collapse before JointPositionController receives first command |
+| D027 | 2026-03-08 | S06 | Cube size 5cm (up from 3cm) | PRD spec says 5–8cm; 3cm cubes too small to reliably detect at room distances |
