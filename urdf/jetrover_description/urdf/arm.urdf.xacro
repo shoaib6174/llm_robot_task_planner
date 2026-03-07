@@ -141,7 +141,7 @@
       upper="2.09"
       effort="1000"
       velocity="10" />
-    <dynamics damping="2.0" friction="1.0"/>
+    <dynamics damping="5.0" friction="2.0"/>
   </joint>
   <link
     name="link3">
@@ -196,7 +196,7 @@
       upper="2.09"
       effort="1000"
       velocity="10" />
-    <dynamics damping="2.0" friction="1.0"/>
+    <dynamics damping="5.0" friction="2.0"/>
   </joint>
   <link
     name="link4">
@@ -251,7 +251,7 @@
       upper="2.09"
       effort="1000"
       velocity="10" />
-    <dynamics damping="2.0" friction="1.0"/>
+    <dynamics damping="5.0" friction="2.0"/>
   </joint>
   <link
     name="servo_link2">
@@ -355,7 +355,7 @@
       upper="2.09"
       effort="1000"
       velocity="10" />
-    <dynamics damping="2.0" friction="1.0"/>
+    <dynamics damping="5.0" friction="2.0"/>
   </joint>
   <link
     name="gripper_link">

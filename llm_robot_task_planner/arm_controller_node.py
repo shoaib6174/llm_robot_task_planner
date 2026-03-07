@@ -85,8 +85,8 @@ class ArmControllerNode(Node):
         self.gripper_target = GRIPPER_OPEN
         self.busy = False
 
-        # Send initial home pose after a short delay
-        self.create_timer(2.0, self.init_pose, callback_group=None)
+        # Send initial home pose after a short delay (must be fast to prevent arm falling)
+        self.create_timer(0.5, self.init_pose, callback_group=None)
         self.init_done = False
 
         self.get_logger().info('Arm controller started')
