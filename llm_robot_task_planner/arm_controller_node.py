@@ -25,7 +25,7 @@ JOINT_TOPICS = [
 ]
 
 # Gripper values
-GRIPPER_OPEN = 0.5     # radians — fingers spread apart
+GRIPPER_OPEN = 1.0     # radians — fingers spread apart (56mm gap for 50mm cube)
 GRIPPER_CLOSE = -0.2   # radians — fingers closed (gripping)
 
 # Predefined poses: [joint1, joint2, joint3, joint4, joint5]
