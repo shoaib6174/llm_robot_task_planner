@@ -17,7 +17,6 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64, String
 from sensor_msgs.msg import JointState
-from nav_msgs.msg import Odometry
 import tf2_ros
 import json
 
@@ -90,14 +89,6 @@ class ArmControllerNode(Node):
         self.gripper_target = GRIPPER_OPEN
         self.busy = False
 
-        # Track robot's world pose from Gazebo odometry
-        # The /odom topic from DiffDrive starts at spawn position
-        self.robot_world_x = 0.0
-        self.robot_world_y = 0.0
-        self.robot_world_z = 0.0
-        self.robot_yaw = 0.0
-        self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
-
         # Simulated grasp state
         self.grasped_object = None  # Name of Gazebo model being held
 
@@ -117,17 +108,6 @@ class ArmControllerNode(Node):
         for i, name in enumerate(msg.name):
             if name in self.current_joints:
                 self.current_joints[name] = msg.position[i]
-
-    def odom_cb(self, msg: Odometry):
-        """Track robot's world position from odometry."""
-        self.robot_world_x = msg.pose.pose.position.x
-        self.robot_world_y = msg.pose.pose.position.y
-        self.robot_world_z = msg.pose.pose.position.z
-        # Extract yaw from quaternion
-        q = msg.pose.pose.orientation
-        siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
-        cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
-        self.robot_yaw = math.atan2(siny_cosp, cosy_cosp)
 
     def command_cb(self, msg: String):
         """Handle arm commands.
@@ -308,7 +288,9 @@ class ArmControllerNode(Node):
         """Get end-effector position in Gazebo world frame.
 
         Combines the TF lookup (base_footprint→EE) with the robot's
-        odometry-reported world position and orientation.
+        actual Gazebo world pose (from gz model command). The /odom
+        topic reports (0,0,0) at startup regardless of spawn position,
+        so we query Gazebo directly.
         """
         try:
             t = self.tf_buffer.lookup_transform(
@@ -321,14 +303,57 @@ class ArmControllerNode(Node):
             self.get_logger().warn(f'TF lookup failed: {e}')
             return None
 
+        # Get robot's actual world pose from Gazebo
+        robot_pose = self._gz_get_model_pose('jetrover')
+        if robot_pose is None:
+            self.get_logger().warn('Failed to get robot pose from Gazebo')
+            return None
+
+        rx, ry, rz, robot_yaw = robot_pose
+
         # Transform EE offset from base_footprint to world using robot yaw
-        cos_yaw = math.cos(self.robot_yaw)
-        sin_yaw = math.sin(self.robot_yaw)
-        world_x = self.robot_world_x + dx * cos_yaw - dy * sin_yaw
-        world_y = self.robot_world_y + dx * sin_yaw + dy * cos_yaw
-        world_z = self.robot_world_z + dz + z_offset
+        cos_yaw = math.cos(robot_yaw)
+        sin_yaw = math.sin(robot_yaw)
+        world_x = rx + dx * cos_yaw - dy * sin_yaw
+        world_y = ry + dx * sin_yaw + dy * cos_yaw
+        world_z = rz + dz + z_offset
 
         return (world_x, world_y, world_z)
+
+    def _gz_get_model_pose(self, model_name):
+        """Get model pose from Gazebo. Returns (x, y, z, yaw) or None."""
+        try:
+            result = subprocess.run(
+                ['bash', '-c',
+                 f'source /opt/ros/jazzy/setup.bash && DISPLAY=:1 '
+                 f'gz model -m {model_name} --pose 2>/dev/null'],
+                capture_output=True, text=True, timeout=10)
+        except Exception:
+            return None
+
+        lines = result.stdout.strip().split('\n')
+        xyz = None
+        rpy = None
+        for i, line in enumerate(lines):
+            if 'XYZ' in line and i + 1 < len(lines):
+                vals = lines[i + 1].strip().strip('[]').split()
+                if len(vals) == 3:
+                    try:
+                        xyz = [float(v) for v in vals]
+                    except ValueError:
+                        pass
+            if 'RPY' in line and i + 1 < len(lines):
+                vals = lines[i + 1].strip().strip('[]').split()
+                if len(vals) == 3:
+                    try:
+                        rpy = [float(v) for v in vals]
+                    except ValueError:
+                        pass
+
+        if xyz is None:
+            return None
+        yaw = rpy[2] if rpy else 0.0
+        return (xyz[0], xyz[1], xyz[2], yaw)
 
     def teleport_grasped_to_ee(self, z_offset=0.0):
         """Teleport the grasped object to the current end-effector position."""
