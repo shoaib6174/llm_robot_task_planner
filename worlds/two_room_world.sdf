@@ -3,7 +3,7 @@
   <world name="two_room_world">
 
     <!-- Physics -->
-    <physics type="bullet" name="bullet_featherstone">
+    <physics type="ode">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
@@ -14,9 +14,7 @@
     <atmosphere type="adiabatic"/>
 
     <!-- Plugins -->
-    <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system">
-      <engine><filename>gz-physics-bullet-featherstone-plugin</filename></engine>
-    </plugin>
+    <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
     <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
     <plugin name="gz::sim::systems::SceneBroadcaster" filename="gz-sim-scene-broadcaster-system"/>
     <plugin name="gz::sim::systems::Contact" filename="gz-sim-contact-system"/>

@@ -13,7 +13,7 @@ from sensor_msgs.msg import JointState
 import json
 
 
-# Joint indices in our command array: [j1, j2, j3, j4, j5, gripper]
+# Joint indices in our command array: [j1, j2, j3, j4, j5]
 JOINT_NAMES = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'r_joint']
 JOINT_TOPICS = [
     'arm/joint1/cmd_pos',
@@ -21,8 +21,12 @@ JOINT_TOPICS = [
     'arm/joint3/cmd_pos',
     'arm/joint4/cmd_pos',
     'arm/joint5/cmd_pos',
-    'arm/gripper/cmd_pos',
 ]
+
+# Two-finger gripper: r_joint and l_joint (mimic with multiplier=-1).
+# DART doesn't support mimic constraints so we actuate both directly.
+GRIPPER_R_TOPIC = 'arm/gripper/r_cmd'
+GRIPPER_L_TOPIC = 'arm/gripper/l_cmd'
 
 # Gripper values
 GRIPPER_OPEN = 1.0     # radians — fingers spread apart (56mm gap for 50mm cube)
@@ -66,11 +70,15 @@ class ArmControllerNode(Node):
     def __init__(self):
         super().__init__('arm_controller')
 
-        # Publishers for each joint
+        # Publishers for arm joints
         self.joint_pubs = []
         for topic in JOINT_TOPICS:
             pub = self.create_publisher(Float64, topic, 10)
             self.joint_pubs.append(pub)
+
+        # Publishers for gripper (two-finger: r_joint + l_joint)
+        self.gripper_r_pub = self.create_publisher(Float64, GRIPPER_R_TOPIC, 10)
+        self.gripper_l_pub = self.create_publisher(Float64, GRIPPER_L_TOPIC, 10)
 
         # Subscribe to joint states for feedback
         self.create_subscription(JointState, '/joint_states', self.joint_state_cb, 10)
@@ -190,10 +198,18 @@ class ArmControllerNode(Node):
         self.send_gripper(gripper_value)
 
     def send_gripper(self, value):
-        """Send gripper position command."""
-        msg = Float64()
-        msg.data = float(value)
-        self.joint_pubs[5].publish(msg)
+        """Send gripper position command to both finger joints.
+
+        r_joint gets the value directly, l_joint gets -value (mimic multiplier=-1).
+        """
+        msg_r = Float64()
+        msg_r.data = float(value)
+        self.gripper_r_pub.publish(msg_r)
+
+        msg_l = Float64()
+        msg_l.data = float(-value)  # mimic: multiplier=-1
+        self.gripper_l_pub.publish(msg_l)
+
         self.gripper_target = value
 
     def move_to(self, target_joints, gripper_value, settle=SETTLE_TIME):

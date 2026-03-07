@@ -158,14 +158,29 @@
         </plugin>
     </gazebo>
 
-    <!-- ==================== Gripper Controller ==================== -->
-    <!-- Only r_joint is actuated; l_joint and all linkage joints mimic it.
-         Mimic joints require bullet-featherstone physics engine. -->
+    <!-- ==================== Gripper Controllers ==================== -->
+    <!-- DART doesn't support mimic joints. Only the two main finger pivots
+         (r_joint and l_joint) are actuated. The 4-bar linkage joints stay
+         passive — the finger bases provide the gripping force directly. -->
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
                 name="gz::sim::systems::JointPositionController">
             <joint_name>r_joint</joint_name>
-            <topic>arm/gripper/cmd_pos</topic>
+            <topic>arm/gripper/r_cmd</topic>
+            <p_gain>100</p_gain>
+            <i_gain>30</i_gain>
+            <d_gain>0</d_gain>
+            <i_max>5</i_max>
+            <i_min>-5</i_min>
+            <cmd_max>20</cmd_max>
+            <cmd_min>-20</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>l_joint</joint_name>
+            <topic>arm/gripper/l_cmd</topic>
             <p_gain>100</p_gain>
             <i_gain>30</i_gain>
             <d_gain>0</d_gain>
