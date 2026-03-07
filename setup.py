@@ -33,6 +33,8 @@ setup(
          glob(os.path.join('config', '*.yaml'))),
         (os.path.join('share', package_name, 'urdf'),
          glob(os.path.join('urdf', '*.xacro'))),
+        (os.path.join('share', package_name, 'maps'),
+         glob(os.path.join('maps', '*'))),
     ] + jetrover_data_files,
     install_requires=['setuptools'],
     zip_safe=True,

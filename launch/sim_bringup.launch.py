@@ -13,6 +13,7 @@ import xacro
 def generate_launch_description():
     pkg_dir = get_package_share_directory('llm_robot_task_planner')
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+    pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
 
     # Set GZ_SIM_RESOURCE_PATH so Gazebo resolves package://jetrover_description/
     # The jetrover meshes are installed under <pkg_share>/urdf/jetrover_description/
@@ -29,8 +30,10 @@ def generate_launch_description():
     xacro_file = os.path.join(pkg_dir, 'urdf', 'robot.urdf.xacro')
     robot_description = xacro.process_file(xacro_file).toxml()
 
-    # World file
+    # Paths
     world_file = os.path.join(pkg_dir, 'worlds', 'two_room_world.sdf')
+    map_file = os.path.join(pkg_dir, 'maps', 'two_room_map.yaml')
+    nav2_params_file = os.path.join(pkg_dir, 'config', 'nav2_params.yaml')
 
     # Robot state publisher
     robot_state_publisher = Node(
@@ -63,8 +66,8 @@ def generate_launch_description():
     )
 
     # Bridge Gazebo topics to ROS 2
-    # Bridge Gazebo topics to ROS 2
-    # DiffDrive subscribes to /cmd_vel and publishes /odom in Gz (not namespaced)
+    # DiffDrive uses /cmd_vel and /odom (not namespaced)
+    # LiDAR publishes on /scan, IMU on /imu in Gz
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -72,11 +75,27 @@ def generate_launch_description():
             '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/world/two_room_world/model/jetrover/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
+            '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
         ],
         remappings=[
             ('/world/two_room_world/model/jetrover/joint_state', '/joint_states'),
         ],
         output='screen',
+    )
+
+    # Nav2 bringup
+    nav2 = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_nav2_bringup, 'launch', 'bringup_launch.py')
+        ),
+        launch_arguments={
+            'map': map_file,
+            'params_file': nav2_params_file,
+            'use_sim_time': 'True',
+        }.items(),
     )
 
     return LaunchDescription([
@@ -85,4 +104,5 @@ def generate_launch_description():
         robot_state_publisher,
         spawn_robot,
         bridge,
+        nav2,
     ])
