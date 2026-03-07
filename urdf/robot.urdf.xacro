@@ -57,14 +57,17 @@
 
     <!-- ==================== Arm Joint Controllers ==================== -->
     <!-- Position controllers for arm joints (for perception scanning and later pick/place) -->
+    <!-- High PID gains needed to hold arm against gravity with lightweight links -->
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
                 name="gz::sim::systems::JointPositionController">
             <joint_name>joint1</joint_name>
             <topic>arm/joint1/cmd_pos</topic>
-            <p_gain>50</p_gain>
-            <i_gain>0.5</i_gain>
-            <d_gain>5</d_gain>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
         </plugin>
     </gazebo>
     <gazebo>
@@ -72,9 +75,11 @@
                 name="gz::sim::systems::JointPositionController">
             <joint_name>joint2</joint_name>
             <topic>arm/joint2/cmd_pos</topic>
-            <p_gain>50</p_gain>
-            <i_gain>0.5</i_gain>
-            <d_gain>5</d_gain>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
         </plugin>
     </gazebo>
     <gazebo>
@@ -82,9 +87,11 @@
                 name="gz::sim::systems::JointPositionController">
             <joint_name>joint3</joint_name>
             <topic>arm/joint3/cmd_pos</topic>
-            <p_gain>50</p_gain>
-            <i_gain>0.5</i_gain>
-            <d_gain>5</d_gain>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
         </plugin>
     </gazebo>
     <gazebo>
@@ -92,9 +99,11 @@
                 name="gz::sim::systems::JointPositionController">
             <joint_name>joint4</joint_name>
             <topic>arm/joint4/cmd_pos</topic>
-            <p_gain>50</p_gain>
-            <i_gain>0.5</i_gain>
-            <d_gain>5</d_gain>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
         </plugin>
     </gazebo>
     <gazebo>
@@ -102,9 +111,11 @@
                 name="gz::sim::systems::JointPositionController">
             <joint_name>joint5</joint_name>
             <topic>arm/joint5/cmd_pos</topic>
-            <p_gain>20</p_gain>
-            <i_gain>0.2</i_gain>
-            <d_gain>2</d_gain>
+            <p_gain>100</p_gain>
+            <i_gain>2</i_gain>
+            <d_gain>10</d_gain>
+            <cmd_max>5</cmd_max>
+            <cmd_min>-5</cmd_min>
         </plugin>
     </gazebo>
 
