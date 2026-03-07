@@ -160,11 +160,12 @@ class ArmControllerNode(Node):
             self.get_logger().warn(f'Unknown action: {action}')
 
     def send_pose(self, joint_values, gripper_value):
-        """Send position commands to all joints immediately."""
+        """Send position commands to all joints with small delay between each."""
         for i, val in enumerate(joint_values):
             msg = Float64()
             msg.data = float(val)
             self.joint_pubs[i].publish(msg)
+            time.sleep(0.02)  # 20ms between publishes to avoid bridge drops
         self.target_pose = joint_values[:]
         self.send_gripper(gripper_value)
 
