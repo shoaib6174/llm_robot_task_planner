@@ -1,0 +1,27 @@
+# Perception configuration for colored cube detection
+
+# Detection method: "color" (HSV segmentation) or "yolo" (YOLOv8)
+detection_method: "color"
+
+# YOLO settings (used when detection_method is "yolo")
+yolo:
+  model_path: "yolov8n.pt"
+  confidence_threshold: 0.5
+  iou_threshold: 0.45
+
+# HSV color ranges for cube detection (used when detection_method is "color")
+# Format: [H_min, S_min, V_min, H_max, S_max, V_max]
+color_ranges:
+  red_low:   [0, 120, 70, 10, 255, 255]
+  red_high:  [170, 120, 70, 180, 255, 255]
+  green:     [35, 120, 70, 85, 255, 255]
+  blue:      [100, 120, 70, 130, 255, 255]
+  yellow:    [20, 120, 70, 35, 255, 255]
+
+# Minimum contour area (pixels) to count as a detection
+min_contour_area: 100
+
+# Camera topics
+camera_image_topic: "/camera/image"
+camera_depth_topic: "/camera/depth_image"
+camera_info_topic: "/camera/camera_info"

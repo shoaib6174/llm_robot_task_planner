@@ -18,5 +18,6 @@
       upper="2.09"
       effort="1000"
       velocity="10" />
+    <dynamics damping="10.0" friction="5.0"/>
   </joint>
 </robot>

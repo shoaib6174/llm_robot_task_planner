@@ -14,6 +14,28 @@
     <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/arm.urdf.xacro"/>
     <xacro:include filename="$(find llm_robot_task_planner)/urdf/jetrover_description/urdf/gripper.urdf.xacro"/>
 
+    <!-- ==================== Fixed Body Camera (for perception scanning) ==================== -->
+    <!-- Front-facing RGBD camera on robot body, tilted 30° down to see floor/cubes -->
+    <link name="body_cam_link">
+        <inertial>
+            <mass value="0.01"/>
+            <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+        </inertial>
+    </link>
+    <joint name="body_cam_joint" type="fixed">
+        <!-- Mounted at front-top of base_link, tilted 20° down (pitch = 0.35 rad) -->
+        <origin xyz="0.12 0.0 0.06" rpy="0 0.35 0"/>
+        <parent link="base_link"/>
+        <child link="body_cam_link"/>
+    </joint>
+    <!-- Optical frame (standard: z-forward, x-right, y-down) -->
+    <link name="body_cam_optical_frame"/>
+    <joint name="body_cam_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+        <parent link="body_cam_link"/>
+        <child link="body_cam_optical_frame"/>
+    </joint>
+
     <!-- ==================== Gazebo Plugins ==================== -->
 
     <!-- Diff drive (simpler than mecanum for initial testing, upgrade later) -->
@@ -52,6 +74,70 @@
             <joint_name>joint4</joint_name>
             <joint_name>joint5</joint_name>
             <joint_name>r_joint</joint_name>
+        </plugin>
+    </gazebo>
+
+    <!-- ==================== Arm Joint Controllers ==================== -->
+    <!-- Position controllers for arm joints (for perception scanning and later pick/place) -->
+    <!-- High PID gains needed to hold arm against gravity with lightweight links -->
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>joint1</joint_name>
+            <topic>arm/joint1/cmd_pos</topic>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>joint2</joint_name>
+            <topic>arm/joint2/cmd_pos</topic>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>joint3</joint_name>
+            <topic>arm/joint3/cmd_pos</topic>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>joint4</joint_name>
+            <topic>arm/joint4/cmd_pos</topic>
+            <p_gain>200</p_gain>
+            <i_gain>5</i_gain>
+            <d_gain>20</d_gain>
+            <cmd_max>10</cmd_max>
+            <cmd_min>-10</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>joint5</joint_name>
+            <topic>arm/joint5/cmd_pos</topic>
+            <p_gain>100</p_gain>
+            <i_gain>2</i_gain>
+            <d_gain>10</d_gain>
+            <cmd_max>5</cmd_max>
+            <cmd_min>-5</cmd_min>
         </plugin>
     </gazebo>
 
@@ -108,6 +194,63 @@
                     <z><noise type="gaussian"><mean>0</mean><stddev>0.017</stddev></noise></z>
                 </linear_acceleration>
             </imu>
+        </sensor>
+    </gazebo>
+
+    <!-- Fixed body RGBD camera for room scanning / perception -->
+    <!-- Gazebo cameras render along +x of their attached frame -->
+    <gazebo reference="body_cam_link">
+        <sensor name="body_rgbd_camera" type="rgbd_camera">
+            <topic>camera</topic>
+            <gz_frame_id>body_cam_optical_frame</gz_frame_id>
+            <update_rate>15</update_rate>
+            <always_on>true</always_on>
+            <camera>
+                <horizontal_fov>1.57</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.05</near>
+                    <far>10.0</far>
+                </clip>
+                <depth_camera>
+                    <clip>
+                        <near>0.05</near>
+                        <far>10.0</far>
+                    </clip>
+                </depth_camera>
+            </camera>
+        </sensor>
+    </gazebo>
+
+    <!-- Arm-mounted RGBD camera (for pick/place guidance, DC5) -->
+    <gazebo reference="depth_cam_frame">
+        <sensor name="arm_rgbd_camera" type="rgbd_camera">
+            <topic>arm_camera</topic>
+            <gz_frame_id>depth_cam_frame</gz_frame_id>
+            <update_rate>15</update_rate>
+            <always_on>true</always_on>
+            <camera>
+                <horizontal_fov>1.047</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.1</near>
+                    <far>10.0</far>
+                </clip>
+                <depth_camera>
+                    <clip>
+                        <near>0.1</near>
+                        <far>10.0</far>
+                    </clip>
+                </depth_camera>
+            </camera>
         </sensor>
     </gazebo>
 
