@@ -91,7 +91,8 @@ def generate_launch_description():
             '/arm/joint3/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',
             '/arm/joint4/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',
             '/arm/joint5/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',
-            '/arm/gripper/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',
+            '/arm/gripper/r_cmd@std_msgs/msg/Float64]gz.msgs.Double',
+            '/arm/gripper/l_cmd@std_msgs/msg/Float64]gz.msgs.Double',
         ],
         remappings=[
             ('/world/two_room_world/model/jetrover/joint_state', '/joint_states'),
