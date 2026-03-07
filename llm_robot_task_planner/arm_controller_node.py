@@ -9,6 +9,7 @@ the arm controller teleports the grasped object to follow the end effector
 via Gazebo's set_pose service. This is a standard approach in Gazebo demos.
 """
 
+import math
 import subprocess
 import time
 
@@ -16,6 +17,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64, String
 from sensor_msgs.msg import JointState
+from nav_msgs.msg import Odometry
 import tf2_ros
 import json
 
@@ -88,6 +90,14 @@ class ArmControllerNode(Node):
         self.gripper_target = GRIPPER_OPEN
         self.busy = False
 
+        # Track robot's world pose from Gazebo odometry
+        # The /odom topic from DiffDrive starts at spawn position
+        self.robot_world_x = 0.0
+        self.robot_world_y = 0.0
+        self.robot_world_z = 0.0
+        self.robot_yaw = 0.0
+        self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
+
         # Simulated grasp state
         self.grasped_object = None  # Name of Gazebo model being held
 
@@ -107,6 +117,17 @@ class ArmControllerNode(Node):
         for i, name in enumerate(msg.name):
             if name in self.current_joints:
                 self.current_joints[name] = msg.position[i]
+
+    def odom_cb(self, msg: Odometry):
+        """Track robot's world position from odometry."""
+        self.robot_world_x = msg.pose.pose.position.x
+        self.robot_world_y = msg.pose.pose.position.y
+        self.robot_world_z = msg.pose.pose.position.z
+        # Extract yaw from quaternion
+        q = msg.pose.pose.orientation
+        siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
+        cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+        self.robot_yaw = math.atan2(siny_cosp, cosy_cosp)
 
     def command_cb(self, msg: String):
         """Handle arm commands.
@@ -205,6 +226,9 @@ class ArmControllerNode(Node):
         time.sleep(settle)
         # If holding an object, teleport it to follow the EE
         if self.grasped_object:
+            # Spin to get fresh TF and odom data (blocked during sleep)
+            for _ in range(20):
+                rclpy.spin_once(self, timeout_sec=0.05)
             self.teleport_grasped_to_ee()
 
     def execute_pose(self, pose_name):
@@ -266,7 +290,9 @@ class ArmControllerNode(Node):
         self.get_logger().info('Place: opening gripper')
         self.send_gripper(GRIPPER_OPEN)
         if self.grasped_object:
-            # Teleport one last time to drop position, then release
+            # Spin to get fresh TF, then teleport to drop position
+            for _ in range(20):
+                rclpy.spin_once(self, timeout_sec=0.05)
             self.teleport_grasped_to_ee(z_offset=-0.03)
             self.grasped_object = None
         time.sleep(1.5)
@@ -278,44 +304,64 @@ class ArmControllerNode(Node):
         self.publish_status('done', 'Place complete')
         self.busy = False
 
-    def teleport_grasped_to_ee(self, z_offset=0.0):
-        """Teleport the grasped object to the current end-effector position.
+    def get_ee_world_position(self, z_offset=0.0):
+        """Get end-effector position in Gazebo world frame.
 
-        Uses gz service set_pose to move the Gazebo model. The object is
-        placed at the EE position with an optional z offset (negative to
-        drop below EE for release).
+        Combines the TF lookup (base_footprint→EE) with the robot's
+        odometry-reported world position and orientation.
         """
+        try:
+            t = self.tf_buffer.lookup_transform(
+                'base_footprint', 'end_effector_link', rclpy.time.Time(),
+                timeout=rclpy.duration.Duration(seconds=1.0))
+            dx = t.transform.translation.x
+            dy = t.transform.translation.y
+            dz = t.transform.translation.z
+        except Exception as e:
+            self.get_logger().warn(f'TF lookup failed: {e}')
+            return None
+
+        # Transform EE offset from base_footprint to world using robot yaw
+        cos_yaw = math.cos(self.robot_yaw)
+        sin_yaw = math.sin(self.robot_yaw)
+        world_x = self.robot_world_x + dx * cos_yaw - dy * sin_yaw
+        world_y = self.robot_world_y + dx * sin_yaw + dy * cos_yaw
+        world_z = self.robot_world_z + dz + z_offset
+
+        return (world_x, world_y, world_z)
+
+    def teleport_grasped_to_ee(self, z_offset=0.0):
+        """Teleport the grasped object to the current end-effector position."""
         if not self.grasped_object:
             return
 
-        # Look up EE position in odom frame
-        try:
-            t = self.tf_buffer.lookup_transform(
-                'odom', 'end_effector_link', rclpy.time.Time(),
-                timeout=rclpy.duration.Duration(seconds=1.0))
-            x = t.transform.translation.x
-            y = t.transform.translation.y
-            z = t.transform.translation.z + z_offset
-        except Exception as e:
-            self.get_logger().warn(f'TF lookup failed: {e}')
+        pos = self.get_ee_world_position(z_offset)
+        if pos is None:
             return
 
-        # Call gz service to set model pose
+        x, y, z = pos
+        self.gz_set_model_pose(self.grasped_object, x, y, z)
+        self.get_logger().info(
+            f'Teleported {self.grasped_object} to ({x:.3f}, {y:.3f}, {z:.3f})')
+
+    def gz_set_model_pose(self, model_name, x, y, z, qx=0, qy=0, qz=0, qw=1):
+        """Set a Gazebo model's pose via gz service."""
+        req = (
+            f'name: "{model_name}", '
+            f'position: {{x: {x:.4f}, y: {y:.4f}, z: {z:.4f}}}, '
+            f'orientation: {{x: {qx}, y: {qy}, z: {qz}, w: {qw}}}'
+        )
         cmd = (
             f'gz service -s /world/{GZ_WORLD}/set_pose '
             f'--reqtype gz.msgs.Pose --reptype gz.msgs.Boolean --timeout 3000 '
-            f'--req \'name: "{self.grasped_object}", '
-            f'position: {{x: {x:.4f}, y: {y:.4f}, z: {z:.4f}}}, '
-            f"orientation: {{x: 0, y: 0, z: 0, w: 1}}'"
+            f"--req '{req}'"
         )
         try:
             subprocess.run(
                 ['bash', '-c', f'source /opt/ros/jazzy/setup.bash && DISPLAY=:1 {cmd}'],
                 capture_output=True, timeout=5)
-            self.get_logger().info(
-                f'Teleported {self.grasped_object} to ({x:.3f}, {y:.3f}, {z:.3f})')
         except Exception as e:
-            self.get_logger().warn(f'Failed to teleport {self.grasped_object}: {e}')
+            self.get_logger().warn(f'gz set_pose failed for {model_name}: {e}')
 
     def publish_status(self, state, message):
         msg = String()
