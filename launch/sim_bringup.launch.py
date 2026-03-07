@@ -89,6 +89,17 @@ def generate_launch_description():
         output='screen',
     )
 
+    # Convert /odom to odom->base_footprint TF
+    # (We don't bridge Gazebo /tf because it contains ALL model poses,
+    # which conflicts with robot_state_publisher's joint TFs.)
+    odom_to_tf = Node(
+        package='llm_robot_task_planner',
+        executable='odom_to_tf',
+        name='odom_to_tf',
+        parameters=[{'use_sim_time': True}],
+        output='screen',
+    )
+
     # ==================== Nav2 Nodes ====================
     # Launched directly instead of via nav2_bringup to avoid
     # unused nodes (docking_server, route_server) that fail to configure.
@@ -191,6 +202,7 @@ def generate_launch_description():
         robot_state_publisher,
         spawn_robot,
         bridge,
+        odom_to_tf,
         # Nav2 nodes
         map_server,
         amcl,
