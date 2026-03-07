@@ -19,3 +19,6 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D013 | 2026-03-07 | S04 | DiffDrive instead of MecanumDrive plugin | MecanumDrive requires angled friction setup; DiffDrive simpler for initial testing |
 | D014 | 2026-03-07 | S04 | 3cm cubes (down from 6cm) | Gripper finger separation ~28mm; 3cm is ~75% of max opening for reliable grasping |
 | D015 | 2026-03-07 | S04 | Helper launch.sh script on niro-1 | colcon source install/setup.bash doesn't work via SSH bash -c; explicit env exports as workaround |
+| D016 | 2026-03-07 | S05 | Direct Nav2 node launch instead of nav2_bringup | nav2_bringup hardcodes docking_server + route_server which fail without dock plugins; direct launch gives full control |
+| D017 | 2026-03-07 | S05 | Remove /tf bridge, use odom_to_tf node | Gazebo /tf (Pose_V) contains ALL model poses, conflicts with robot_state_publisher; odom_to_tf extracts only odom→base_footprint |
+| D018 | 2026-03-07 | S05 | gz_frame_id for sensor frame overrides | Gazebo scopes sensor frames as model/link/sensor; gz_frame_id overrides to match URDF frame names for AMCL |
