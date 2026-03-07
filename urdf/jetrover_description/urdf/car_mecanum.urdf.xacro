@@ -65,12 +65,9 @@
       <material name="black"/>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="1.5708 0 0" />
       <geometry>
-        <mesh
-          filename="package://jetrover_description/meshes/mecanum/wheel_left_front_link_collision.stl" />
+        <cylinder radius="0.048" length="0.035" />
       </geometry>
     </collision>
   </link>
@@ -114,12 +111,9 @@
       <material name="black"/>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="1.5708 0 0" />
       <geometry>
-        <mesh
-          filename="package://jetrover_description/meshes/mecanum/wheel_left_back_link_collision.stl" />
+        <cylinder radius="0.048" length="0.035" />
       </geometry>
     </collision>
   </link>
@@ -163,12 +157,9 @@
       <material name="black"/>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="1.5708 0 0" />
       <geometry>
-        <mesh
-            filename="package://jetrover_description/meshes/mecanum/wheel_right_front_link_collision.stl" />
+        <cylinder radius="0.048" length="0.035" />
       </geometry>
     </collision>
   </link>
@@ -212,12 +203,9 @@
       <material name="black"/>
     </visual>
     <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="1.5708 0 0" />
       <geometry>
-        <mesh
-            filename="package://jetrover_description/meshes/mecanum/wheel_right_back_link_collision.stl" />
+        <cylinder radius="0.048" length="0.035" />
       </geometry>
     </collision>
   </link>
