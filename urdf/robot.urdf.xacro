@@ -198,7 +198,8 @@
     </gazebo>
 
     <!-- Fixed body RGBD camera for room scanning / perception -->
-    <gazebo reference="body_cam_optical_frame">
+    <!-- Gazebo cameras render along +x of their attached frame -->
+    <gazebo reference="body_cam_link">
         <sensor name="body_rgbd_camera" type="rgbd_camera">
             <topic>camera</topic>
             <gz_frame_id>body_cam_optical_frame</gz_frame_id>
