@@ -55,7 +55,7 @@ POSES = {
 }
 
 # Time to wait after sending a pose command for the PID to settle (seconds)
-SETTLE_TIME = 2.0
+SETTLE_TIME = 3.0
 
 
 class ArmControllerNode(Node):
@@ -173,7 +173,7 @@ class ArmControllerNode(Node):
             self.joint_pubs[i].publish(msg)
             time.sleep(0.02)
 
-        time.sleep(0.3)  # let upstream joints start settling
+        time.sleep(1.5)  # let upstream joints mostly settle before downstream
 
         # Stage 2: elbow + wrist joints (low inertia)
         for i in range(2, 5):
