@@ -159,9 +159,15 @@
     </gazebo>
 
     <!-- ==================== Gripper Controllers ==================== -->
-    <!-- DART doesn't support mimic joints. Only the two main finger pivots
-         (r_joint and l_joint) are actuated. The 4-bar linkage joints stay
-         passive — the finger bases provide the gripping force directly. -->
+    <!-- DART doesn't support mimic joints, so ALL 6 gripper joints are
+         individually controlled. The arm_controller_node computes mimic
+         angles from r_joint and commands each joint separately.
+         Mimic ratios (relative to r_joint value):
+           l_joint     = r_joint * -1
+           r_in_joint  = r_joint * -1
+           l_in_joint  = r_joint * -1
+           r_out_joint = r_joint *  1
+           l_out_joint = r_joint *  1  -->
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
                 name="gz::sim::systems::JointPositionController">
@@ -181,6 +187,63 @@
                 name="gz::sim::systems::JointPositionController">
             <joint_name>l_joint</joint_name>
             <topic>arm/gripper/l_cmd</topic>
+            <p_gain>100</p_gain>
+            <i_gain>30</i_gain>
+            <d_gain>0</d_gain>
+            <i_max>5</i_max>
+            <i_min>-5</i_min>
+            <cmd_max>20</cmd_max>
+            <cmd_min>-20</cmd_min>
+        </plugin>
+    </gazebo>
+    <!-- 4-bar linkage joints — individually controlled to emulate mimic -->
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>r_in_joint</joint_name>
+            <topic>arm/gripper/r_in_cmd</topic>
+            <p_gain>100</p_gain>
+            <i_gain>30</i_gain>
+            <d_gain>0</d_gain>
+            <i_max>5</i_max>
+            <i_min>-5</i_min>
+            <cmd_max>20</cmd_max>
+            <cmd_min>-20</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>l_in_joint</joint_name>
+            <topic>arm/gripper/l_in_cmd</topic>
+            <p_gain>100</p_gain>
+            <i_gain>30</i_gain>
+            <d_gain>0</d_gain>
+            <i_max>5</i_max>
+            <i_min>-5</i_min>
+            <cmd_max>20</cmd_max>
+            <cmd_min>-20</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>r_out_joint</joint_name>
+            <topic>arm/gripper/r_out_cmd</topic>
+            <p_gain>100</p_gain>
+            <i_gain>30</i_gain>
+            <d_gain>0</d_gain>
+            <i_max>5</i_max>
+            <i_min>-5</i_min>
+            <cmd_max>20</cmd_max>
+            <cmd_min>-20</cmd_min>
+        </plugin>
+    </gazebo>
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>l_out_joint</joint_name>
+            <topic>arm/gripper/l_out_cmd</topic>
             <p_gain>100</p_gain>
             <i_gain>30</i_gain>
             <d_gain>0</d_gain>

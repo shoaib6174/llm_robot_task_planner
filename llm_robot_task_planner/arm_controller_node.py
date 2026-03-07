@@ -23,10 +23,22 @@ JOINT_TOPICS = [
     'arm/joint5/cmd_pos',
 ]
 
-# Two-finger gripper: r_joint and l_joint (mimic with multiplier=-1).
-# DART doesn't support mimic constraints so we actuate both directly.
-GRIPPER_R_TOPIC = 'arm/gripper/r_cmd'
-GRIPPER_L_TOPIC = 'arm/gripper/l_cmd'
+# All 6 gripper joints — DART doesn't support mimic constraints,
+# so we actuate each joint individually with computed mimic angles.
+# Mimic ratios relative to r_joint value:
+#   l_joint     = r_joint * -1
+#   r_in_joint  = r_joint * -1
+#   l_in_joint  = r_joint * -1
+#   r_out_joint = r_joint *  1
+#   l_out_joint = r_joint *  1
+GRIPPER_TOPICS = {
+    'r':     ('arm/gripper/r_cmd',      1),   # r_joint (master)
+    'l':     ('arm/gripper/l_cmd',     -1),   # l_joint
+    'r_in':  ('arm/gripper/r_in_cmd',  -1),   # r_in_joint
+    'l_in':  ('arm/gripper/l_in_cmd',  -1),   # l_in_joint
+    'r_out': ('arm/gripper/r_out_cmd',  1),   # r_out_joint
+    'l_out': ('arm/gripper/l_out_cmd',  1),   # l_out_joint
+}
 
 # Gripper values
 GRIPPER_OPEN = 1.0     # radians — fingers spread apart (56mm gap for 50mm cube)
@@ -76,9 +88,10 @@ class ArmControllerNode(Node):
             pub = self.create_publisher(Float64, topic, 10)
             self.joint_pubs.append(pub)
 
-        # Publishers for gripper (two-finger: r_joint + l_joint)
-        self.gripper_r_pub = self.create_publisher(Float64, GRIPPER_R_TOPIC, 10)
-        self.gripper_l_pub = self.create_publisher(Float64, GRIPPER_L_TOPIC, 10)
+        # Publishers for gripper (all 6 joints with mimic ratios)
+        self.gripper_pubs = {}
+        for name, (topic, _ratio) in GRIPPER_TOPICS.items():
+            self.gripper_pubs[name] = self.create_publisher(Float64, topic, 10)
 
         # Subscribe to joint states for feedback
         self.create_subscription(JointState, '/joint_states', self.joint_state_cb, 10)
@@ -198,17 +211,14 @@ class ArmControllerNode(Node):
         self.send_gripper(gripper_value)
 
     def send_gripper(self, value):
-        """Send gripper position command to both finger joints.
+        """Send gripper position command to all 6 finger joints.
 
-        r_joint gets the value directly, l_joint gets -value (mimic multiplier=-1).
+        Each joint's command = value * mimic_ratio (from GRIPPER_TOPICS).
         """
-        msg_r = Float64()
-        msg_r.data = float(value)
-        self.gripper_r_pub.publish(msg_r)
-
-        msg_l = Float64()
-        msg_l.data = float(-value)  # mimic: multiplier=-1
-        self.gripper_l_pub.publish(msg_l)
+        for name, (topic, ratio) in GRIPPER_TOPICS.items():
+            msg = Float64()
+            msg.data = float(value * ratio)
+            self.gripper_pubs[name].publish(msg)
 
         self.gripper_target = value
 
