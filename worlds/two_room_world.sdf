@@ -327,26 +327,27 @@
     </model>
 
     <!-- ==================== Colored Cubes ==================== -->
-    <!-- 6cm cubes (0.06m), mass 0.1kg, placed on floor (z = half-height = 0.03) -->
-    <!-- Inertia for uniform cube: I = (1/6)*m*s^2 = (1/6)*0.1*0.0036 = 0.00006 -->
+    <!-- 3cm cubes (0.03m) sized to fit JetRover gripper (~28mm finger separation) -->
+    <!-- mass 0.05kg, placed on floor (z = half-height = 0.015) -->
+    <!-- Inertia for uniform cube: I = (1/6)*m*s^2 = (1/6)*0.05*0.0009 = 7.5e-06 -->
 
     <!-- Red cube - Room A -->
     <model name="red_cube">
-      <pose>2.5 2.5 0.03 0 0 0</pose>
+      <pose>2.5 2.5 0.015 0 0 0</pose>
       <link name="link">
         <inertial>
-          <mass>0.1</mass>
+          <mass>0.05</mass>
           <inertia>
-            <ixx>0.00006</ixx>
+            <ixx>7.5e-06</ixx>
             <ixy>0</ixy>
             <ixz>0</ixz>
-            <iyy>0.00006</iyy>
+            <iyy>7.5e-06</iyy>
             <iyz>0</iyz>
-            <izz>0.00006</izz>
+            <izz>7.5e-06</izz>
           </inertia>
         </inertial>
         <collision name="collision">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <surface>
             <friction>
               <ode>
@@ -357,7 +358,7 @@
           </surface>
         </collision>
         <visual name="visual">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <material>
             <ambient>0.8 0.0 0.0 1</ambient>
             <diffuse>0.9 0.1 0.1 1</diffuse>
@@ -369,21 +370,21 @@
 
     <!-- Blue cube - Room A -->
     <model name="blue_cube">
-      <pose>1.0 1.0 0.03 0 0 0</pose>
+      <pose>1.0 1.0 0.015 0 0 0</pose>
       <link name="link">
         <inertial>
-          <mass>0.1</mass>
+          <mass>0.05</mass>
           <inertia>
-            <ixx>0.00006</ixx>
+            <ixx>7.5e-06</ixx>
             <ixy>0</ixy>
             <ixz>0</ixz>
-            <iyy>0.00006</iyy>
+            <iyy>7.5e-06</iyy>
             <iyz>0</iyz>
-            <izz>0.00006</izz>
+            <izz>7.5e-06</izz>
           </inertia>
         </inertial>
         <collision name="collision">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <surface>
             <friction>
               <ode>
@@ -394,7 +395,7 @@
           </surface>
         </collision>
         <visual name="visual">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <material>
             <ambient>0.0 0.0 0.8 1</ambient>
             <diffuse>0.1 0.1 0.9 1</diffuse>
@@ -406,21 +407,21 @@
 
     <!-- Green cube - Room B -->
     <model name="green_cube">
-      <pose>6.0 2.5 0.03 0 0 0</pose>
+      <pose>6.0 2.5 0.015 0 0 0</pose>
       <link name="link">
         <inertial>
-          <mass>0.1</mass>
+          <mass>0.05</mass>
           <inertia>
-            <ixx>0.00006</ixx>
+            <ixx>7.5e-06</ixx>
             <ixy>0</ixy>
             <ixz>0</ixz>
-            <iyy>0.00006</iyy>
+            <iyy>7.5e-06</iyy>
             <iyz>0</iyz>
-            <izz>0.00006</izz>
+            <izz>7.5e-06</izz>
           </inertia>
         </inertial>
         <collision name="collision">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <surface>
             <friction>
               <ode>
@@ -431,7 +432,7 @@
           </surface>
         </collision>
         <visual name="visual">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <material>
             <ambient>0.0 0.7 0.0 1</ambient>
             <diffuse>0.1 0.8 0.1 1</diffuse>
@@ -443,21 +444,21 @@
 
     <!-- Yellow cube - Room B -->
     <model name="yellow_cube">
-      <pose>6.5 1.0 0.03 0 0 0</pose>
+      <pose>6.5 1.0 0.015 0 0 0</pose>
       <link name="link">
         <inertial>
-          <mass>0.1</mass>
+          <mass>0.05</mass>
           <inertia>
-            <ixx>0.00006</ixx>
+            <ixx>7.5e-06</ixx>
             <ixy>0</ixy>
             <ixz>0</ixz>
-            <iyy>0.00006</iyy>
+            <iyy>7.5e-06</iyy>
             <iyz>0</iyz>
-            <izz>0.00006</izz>
+            <izz>7.5e-06</izz>
           </inertia>
         </inertial>
         <collision name="collision">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <surface>
             <friction>
               <ode>
@@ -468,7 +469,7 @@
           </surface>
         </collision>
         <visual name="visual">
-          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
           <material>
             <ambient>0.8 0.8 0.0 1</ambient>
             <diffuse>0.9 0.9 0.1 1</diffuse>

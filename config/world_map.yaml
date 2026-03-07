@@ -28,29 +28,29 @@ locations:
 objects:
   red_cube:
     color: "red"
-    size: 0.06
-    initial_position: [2.5, 2.5, 0.03]
+    size: 0.03
+    initial_position: [2.5, 2.5, 0.015]
     expected_location: "room_a"
     graspable: true
 
   blue_cube:
     color: "blue"
-    size: 0.06
-    initial_position: [1.0, 1.0, 0.03]
+    size: 0.03
+    initial_position: [1.0, 1.0, 0.015]
     expected_location: "room_a"
     graspable: true
 
   green_cube:
     color: "green"
-    size: 0.06
-    initial_position: [6.0, 2.5, 0.03]
+    size: 0.03
+    initial_position: [6.0, 2.5, 0.015]
     expected_location: "room_b"
     graspable: true
 
   yellow_cube:
     color: "yellow"
-    size: 0.06
-    initial_position: [6.5, 1.0, 0.03]
+    size: 0.03
+    initial_position: [6.5, 1.0, 0.015]
     expected_location: "room_b"
     graspable: true
 
