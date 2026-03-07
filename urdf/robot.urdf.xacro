@@ -79,10 +79,19 @@
 
     <!-- ==================== Arm Joint Controllers ==================== -->
     <!-- PID P-only controllers. D_gain=0 because physical damping=10 provides
-         all needed derivative stabilization. With D>0, P and D terms cancel
-         at saturation on low-inertia links (velocity spikes → D saturates →
-         cancels P → net output ≈ 0). P-only + physical damping gives ζ>>1
-         (heavily overdamped, no oscillation). -->
+         all needed derivative stabilization. -->
+    <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+                name="gz::sim::systems::JointPositionController">
+            <joint_name>joint4</joint_name>
+            <topic>arm/joint4/cmd_pos</topic>
+            <p_gain>200</p_gain>
+            <i_gain>0</i_gain>
+            <d_gain>0</d_gain>
+            <cmd_max>40</cmd_max>
+            <cmd_min>-40</cmd_min>
+        </plugin>
+    </gazebo>
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
                 name="gz::sim::systems::JointPositionController">
@@ -112,18 +121,6 @@
                 name="gz::sim::systems::JointPositionController">
             <joint_name>joint3</joint_name>
             <topic>arm/joint3/cmd_pos</topic>
-            <p_gain>200</p_gain>
-            <i_gain>0</i_gain>
-            <d_gain>0</d_gain>
-            <cmd_max>40</cmd_max>
-            <cmd_min>-40</cmd_min>
-        </plugin>
-    </gazebo>
-    <gazebo>
-        <plugin filename="gz-sim-joint-position-controller-system"
-                name="gz::sim::systems::JointPositionController">
-            <joint_name>joint4</joint_name>
-            <topic>arm/joint4/cmd_pos</topic>
             <p_gain>200</p_gain>
             <i_gain>0</i_gain>
             <d_gain>0</d_gain>
