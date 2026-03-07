@@ -1,0 +1,61 @@
+# Semantic map for the two-room Gazebo world
+# Coordinates are in the Gazebo world frame (meters)
+# World layout: Room A (x=0-4, y=0-4) | doorway at x=4 | Room B (x=4-8, y=0-4)
+
+locations:
+  room_a:
+    coordinates: [2.0, 2.0, 0.0]  # x, y, theta (center of room)
+    description: "Room A - west room"
+    bounds:
+      x_min: 0.0
+      x_max: 4.0
+      y_min: 0.0
+      y_max: 4.0
+
+  room_b:
+    coordinates: [6.0, 2.0, 0.0]
+    description: "Room B - east room"
+    bounds:
+      x_min: 4.0
+      x_max: 8.0
+      y_min: 0.0
+      y_max: 4.0
+
+  doorway:
+    coordinates: [4.0, 2.0, 0.0]
+    description: "Doorway between Room A and Room B"
+
+objects:
+  red_cube:
+    color: "red"
+    size: 0.03
+    initial_position: [2.5, 2.5, 0.015]
+    expected_location: "room_a"
+    graspable: true
+
+  blue_cube:
+    color: "blue"
+    size: 0.03
+    initial_position: [1.0, 1.0, 0.015]
+    expected_location: "room_a"
+    graspable: true
+
+  green_cube:
+    color: "green"
+    size: 0.03
+    initial_position: [6.0, 2.5, 0.015]
+    expected_location: "room_b"
+    graspable: true
+
+  yellow_cube:
+    color: "yellow"
+    size: 0.03
+    initial_position: [6.5, 1.0, 0.015]
+    expected_location: "room_b"
+    graspable: true
+
+walls:
+  thickness: 0.15
+  height: 2.5
+  doorway_width: 1.0  # meters (y=1.5 to y=2.5)
+  doorway_position: [4.0, 2.0]  # center of doorway
