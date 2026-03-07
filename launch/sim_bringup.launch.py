@@ -81,7 +81,6 @@ def generate_launch_description():
             '/world/two_room_world/model/jetrover/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
         ],
         remappings=[
