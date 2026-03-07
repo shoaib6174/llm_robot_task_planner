@@ -160,12 +160,28 @@ class ArmControllerNode(Node):
             self.get_logger().warn(f'Unknown action: {action}')
 
     def send_pose(self, joint_values, gripper_value):
-        """Send position commands to all joints with small delay between each."""
-        for i, val in enumerate(joint_values):
+        """Send position commands to all joints.
+
+        Sends upstream joints (1-2) first, waits briefly for them to begin
+        moving, then sends downstream joints (3-5). This prevents coupling
+        torques from upstream motion overwhelming downstream controllers.
+        """
+        # Stage 1: base + shoulder (high inertia, high authority)
+        for i in range(2):
             msg = Float64()
-            msg.data = float(val)
+            msg.data = float(joint_values[i])
             self.joint_pubs[i].publish(msg)
-            time.sleep(0.02)  # 20ms between publishes to avoid bridge drops
+            time.sleep(0.02)
+
+        time.sleep(0.3)  # let upstream joints start settling
+
+        # Stage 2: elbow + wrist joints (low inertia)
+        for i in range(2, 5):
+            msg = Float64()
+            msg.data = float(joint_values[i])
+            self.joint_pubs[i].publish(msg)
+            time.sleep(0.02)
+
         self.target_pose = joint_values[:]
         self.send_gripper(gripper_value)
 
