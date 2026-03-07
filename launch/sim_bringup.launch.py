@@ -63,18 +63,17 @@ def generate_launch_description():
     )
 
     # Bridge Gazebo topics to ROS 2
-    # DiffDrive publishes on /model/jetrover/cmd_vel in Gz, bridge to ROS /cmd_vel
+    # Bridge Gazebo topics to ROS 2
+    # DiffDrive subscribes to /cmd_vel and publishes /odom in Gz (not namespaced)
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
-            '/model/jetrover/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
-            '/model/jetrover/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/world/two_room_world/model/jetrover/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
         ],
         remappings=[
-            ('/model/jetrover/cmd_vel', '/cmd_vel'),
-            ('/model/jetrover/odometry', '/odom'),
             ('/world/two_room_world/model/jetrover/joint_state', '/joint_states'),
         ],
         output='screen',
