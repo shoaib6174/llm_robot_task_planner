@@ -111,4 +111,32 @@
         </sensor>
     </gazebo>
 
+    <!-- RGBD camera on depth_cam_frame (arm-mounted, matches Astra Pro specs) -->
+    <gazebo reference="depth_cam_frame">
+        <sensor name="rgbd_camera" type="rgbd_camera">
+            <topic>camera</topic>
+            <gz_frame_id>depth_cam_frame</gz_frame_id>
+            <update_rate>15</update_rate>
+            <always_on>true</always_on>
+            <camera>
+                <horizontal_fov>1.047</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.1</near>
+                    <far>10.0</far>
+                </clip>
+                <depth_camera>
+                    <clip>
+                        <near>0.1</near>
+                        <far>10.0</far>
+                    </clip>
+                </depth_camera>
+            </camera>
+        </sensor>
+    </gazebo>
+
 </robot>

@@ -46,6 +46,7 @@ setup(
     entry_points={
         'console_scripts': [
             'odom_to_tf = llm_robot_task_planner.odom_to_tf_node:main',
+            'perception_node = llm_robot_task_planner.perception_node:main',
         ],
     },
 )

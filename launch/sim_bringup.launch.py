@@ -82,6 +82,9 @@ def generate_launch_description():
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            '/camera/image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         ],
         remappings=[
             ('/world/two_room_world/model/jetrover/joint_state', '/joint_states'),
@@ -196,6 +199,15 @@ def generate_launch_description():
         }],
     )
 
+    # ==================== Perception ====================
+    perception_node = Node(
+        package='llm_robot_task_planner',
+        executable='perception_node',
+        name='perception_node',
+        parameters=[{'use_sim_time': True}],
+        output='screen',
+    )
+
     return LaunchDescription([
         set_gz_resource_path,
         gazebo,
@@ -213,4 +225,6 @@ def generate_launch_description():
         bt_navigator,
         velocity_smoother,
         lifecycle_manager,
+        # Perception
+        perception_node,
     ])
