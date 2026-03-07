@@ -55,6 +55,7 @@
       upper="1.57"
       effort="1000"
       velocity="10" />
+    <dynamics damping="10.0" friction="2.0"/>
   </joint>
   <link
     name="l_link">
