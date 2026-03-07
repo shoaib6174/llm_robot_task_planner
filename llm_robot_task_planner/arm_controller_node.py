@@ -13,7 +13,7 @@ from sensor_msgs.msg import JointState
 import json
 
 
-# Joint indices in our command array: [j1, j2, j3, j4, j5, gripper]
+# Joint indices in our command array: [j1, j2, j3, j4, j5]
 JOINT_NAMES = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'r_joint']
 JOINT_TOPICS = [
     'arm/joint1/cmd_pos',
@@ -21,7 +21,17 @@ JOINT_TOPICS = [
     'arm/joint3/cmd_pos',
     'arm/joint4/cmd_pos',
     'arm/joint5/cmd_pos',
-    'arm/gripper/cmd_pos',
+]
+
+# Gripper joint topics — DART doesn't support mimic joints, so each finger
+# joint gets its own controller. Multiplier from URDF mimic tags.
+GRIPPER_JOINTS = [
+    ('arm/gripper/r_joint/cmd_pos', 1.0),      # actuated joint
+    ('arm/gripper/l_joint/cmd_pos', -1.0),      # mimic: multiplier=-1
+    ('arm/gripper/r_in_joint/cmd_pos', -1.0),   # mimic: multiplier=-1
+    ('arm/gripper/l_in_joint/cmd_pos', -1.0),   # mimic: multiplier=-1
+    ('arm/gripper/r_out_joint/cmd_pos', 1.0),   # mimic: multiplier=1
+    ('arm/gripper/l_out_joint/cmd_pos', 1.0),   # mimic: multiplier=1
 ]
 
 # Gripper values
@@ -66,11 +76,17 @@ class ArmControllerNode(Node):
     def __init__(self):
         super().__init__('arm_controller')
 
-        # Publishers for each joint
+        # Publishers for arm joints
         self.joint_pubs = []
         for topic in JOINT_TOPICS:
             pub = self.create_publisher(Float64, topic, 10)
             self.joint_pubs.append(pub)
+
+        # Publishers for gripper joints (manual mimic — DART doesn't support it)
+        self.gripper_pubs = []
+        for topic, _mult in GRIPPER_JOINTS:
+            pub = self.create_publisher(Float64, topic, 10)
+            self.gripper_pubs.append(pub)
 
         # Subscribe to joint states for feedback
         self.create_subscription(JointState, '/joint_states', self.joint_state_cb, 10)
@@ -190,10 +206,15 @@ class ArmControllerNode(Node):
         self.send_gripper(gripper_value)
 
     def send_gripper(self, value):
-        """Send gripper position command."""
-        msg = Float64()
-        msg.data = float(value)
-        self.joint_pubs[5].publish(msg)
+        """Send gripper position command to all finger joints.
+
+        DART doesn't support mimic joints, so we manually send commands
+        to each finger joint with the correct multiplier.
+        """
+        for i, (topic, mult) in enumerate(GRIPPER_JOINTS):
+            msg = Float64()
+            msg.data = float(value * mult)
+            self.gripper_pubs[i].publish(msg)
         self.gripper_target = value
 
     def move_to(self, target_joints, gripper_value, settle=SETTLE_TIME):
