@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog Cover</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #e8e8e8;
+    font-family: 'Sora', sans-serif;
+  }
+
+  .cover {
+    width: 1500px;
+    height: 750px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* Subtle dot grid */
+  .dot-grid {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: radial-gradient(circle, #d1d5db 0.8px, transparent 0.8px);
+    background-size: 28px 28px;
+    opacity: 0.35;
+  }
+
+  /* ===== LEFT COLUMN ===== */
+  .left {
+    width: 52%;
+    padding: 65px 40px 65px 75px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 5;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #16a34a;
+    letter-spacing: 0.5px;
+    width: fit-content;
+    margin-bottom: 28px;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+  }
+
+  .heading {
+    font-size: 52px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.08;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+  }
+
+  .heading .hl-ros { color: #2196F3; }
+  .heading .hl-gz { color: #F57C00; }
+  .heading .hl-pt { color: #EE4C2C; }
+  .heading .hl-dim { color: #9ca3af; font-weight: 600; }
+
+  .subheading {
+    font-size: 17px;
+    font-weight: 400;
+    color: #6b7280;
+    line-height: 1.55;
+    max-width: 460px;
+  }
+
+  .subheading strong {
+    color: #374151;
+    font-weight: 600;
+  }
+
+  /* Version chain mini diagram */
+  .chain-mini {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chain-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .cm-node {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+
+  .cm-arrow {
+    font-size: 16px;
+    color: #d1d5db;
+    padding: 0 8px;
+  }
+
+  .cm-ubuntu { background: #faf5ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+  .cm-ros { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+  .cm-gazebo { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+  .cm-gpu { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .cm-arch { background: #fefce8; color: #ca8a04; border: 1px solid #fef08a; }
+  .cm-cuda { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+  /* ===== RIGHT COLUMN ===== */
+  .right {
+    width: 48%;
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Logo cluster */
+  .logo-cluster {
+    position: relative;
+    width: 520px;
+    height: 520px;
+  }
+
+  /* Individual logo containers */
+  .logo-item {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease;
+  }
+
+  .logo-circle:hover {
+    transform: translateY(-4px);
+  }
+
+  .logo-circle img {
+    max-width: 70px;
+    max-height: 70px;
+    object-fit: contain;
+  }
+
+  .logo-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* Logo positions — pentagon layout */
+  .logo-ros2    { top: 20px;  left: 195px; }
+  .logo-gazebo  { top: 165px; left: 40px;  }
+  .logo-pytorch { top: 165px; right: 50px; }
+  .logo-ubuntu  { top: 345px; left: 105px; }
+  .logo-nvidia  { top: 345px; right: 95px; }
+
+  /* Logo specific colors */
+  .logo-ros2 .logo-circle    { background: #eff6ff; border: 2px solid #bfdbfe; }
+  .logo-ros2 .logo-name      { color: #2563eb; }
+
+  .logo-gazebo .logo-circle  { background: #fff7ed; border: 2px solid #fed7aa; }
+  .logo-gazebo .logo-name    { color: #ea580c; }
+
+  .logo-pytorch .logo-circle { background: #fef2f2; border: 2px solid #fecaca; }
+  .logo-pytorch .logo-name   { color: #dc2626; }
+
+  .logo-ubuntu .logo-circle  { background: #faf5ff; border: 2px solid #e9d5ff; }
+  .logo-ubuntu .logo-name    { color: #7c3aed; }
+
+  .logo-nvidia .logo-circle  { background: #f0fdf4; border: 2px solid #bbf7d0; }
+  .logo-nvidia .logo-name    { color: #16a34a; }
+
+  /* Connection lines between logos */
+  .connections {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+
+  .connections svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Robot arm background deco */
+  .robot-arm {
+    position: absolute;
+    bottom: 20px;
+    right: 30px;
+    opacity: 0.06;
+    z-index: 1;
+  }
+
+  .robot-arm svg {
+    width: 280px;
+    height: 280px;
+  }
+
+  /* Accent bar bottom */
+  .accent-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    z-index: 10;
+    background: linear-gradient(90deg,
+      #2563eb 0%, #2563eb 20%,
+      #ea580c 20%, #ea580c 40%,
+      #dc2626 40%, #dc2626 60%,
+      #7c3aed 60%, #7c3aed 80%,
+      #16a34a 80%, #16a34a 100%
+    );
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="dot-grid"></div>
+
+    <!-- LEFT -->
+    <div class="left">
+      <div class="badge">
+        <div class="badge-dot"></div>
+        Compatibility Guide
+      </div>
+
+      <div class="heading">
+        How to Match<br>
+        <span class="hl-ros">ROS 2</span> + <span class="hl-gz">Gazebo</span><br>
+        + <span class="hl-pt">PyTorch</span> <span class="hl-dim">CUDA</span>
+      </div>
+
+      <div class="subheading">
+        <strong>For any Ubuntu version and GPU.</strong> Stop guessing versions — match them systematically.
+      </div>
+
+      <div class="chain-mini">
+        <div class="chain-row">
+          <span class="cm-node cm-ubuntu">Ubuntu 24.04</span>
+          <span class="cm-arrow">&rarr;</span>
+          <span class="cm-node cm-ros">ROS 2 Jazzy</span>
+          <span class="cm-arrow">&rarr;</span>
+          <span class="cm-node cm-gazebo">Gz Harmonic</span>
+        </div>
+        <div class="chain-row">
+          <span class="cm-node cm-gpu">RTX 50xx</span>
+          <span class="cm-arrow">&rarr;</span>
+          <span class="cm-node cm-arch">sm_120</span>
+          <span class="cm-arrow">&rarr;</span>
+          <span class="cm-node cm-cuda">cu128</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+      <div class="logo-cluster">
+        <!-- Connection lines -->
+        <div class="connections">
+          <svg viewBox="0 0 520 520" fill="none">
+            <!-- ROS2 center: ~250,75  Gazebo center: ~95,220  PyTorch center: ~415,220 -->
+            <!-- Ubuntu center: ~160,400  NVIDIA center: ~370,400 -->
+            <path d="M250 90 Q160 150, 100 210" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+            <path d="M260 90 Q360 150, 420 210" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+            <path d="M100 290 Q120 340, 160 390" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+            <path d="M420 290 Q400 340, 375 390" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+            <path d="M220 405 Q270 415, 320 405" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4" fill="none"/>
+            <!-- Dots at nodes -->
+            <circle cx="250" cy="85" r="3" fill="#bfdbfe"/>
+            <circle cx="100" cy="220" r="3" fill="#fed7aa"/>
+            <circle cx="420" cy="220" r="3" fill="#fecaca"/>
+            <circle cx="160" cy="400" r="3" fill="#e9d5ff"/>
+            <circle cx="375" cy="400" r="3" fill="#bbf7d0"/>
+          </svg>
+        </div>
+
+        <!-- ROS 2 — real logo -->
+        <div class="logo-item logo-ros2">
+          <div class="logo-circle">
+            <img src="assets/logos/ros.svg" alt="ROS 2">
+          </div>
+          <span class="logo-name">ROS 2</span>
+        </div>
+
+        <!-- Gazebo — real logo -->
+        <div class="logo-item logo-gazebo">
+          <div class="logo-circle">
+            <img src="assets/logos/gazebo.svg" alt="Gazebo">
+          </div>
+          <span class="logo-name">Gazebo</span>
+        </div>
+
+        <!-- PyTorch — real logo -->
+        <div class="logo-item logo-pytorch">
+          <div class="logo-circle">
+            <img src="assets/logos/pytorch.svg" alt="PyTorch">
+          </div>
+          <span class="logo-name">PyTorch</span>
+        </div>
+
+        <!-- Ubuntu — real logo -->
+        <div class="logo-item logo-ubuntu">
+          <div class="logo-circle">
+            <img src="assets/logos/ubuntu.svg" alt="Ubuntu">
+          </div>
+          <span class="logo-name">Ubuntu</span>
+        </div>
+
+        <!-- NVIDIA — real logo -->
+        <div class="logo-item logo-nvidia">
+          <div class="logo-circle">
+            <img src="assets/logos/nvidia.svg" alt="NVIDIA CUDA">
+          </div>
+          <span class="logo-name">NVIDIA CUDA</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Robot arm background deco -->
+    <div class="robot-arm">
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="#111827" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="110" y="260" width="80" height="30" rx="4"/>
+          <line x1="150" y1="260" x2="150" y2="220"/>
+          <line x1="150" y1="220" x2="100" y2="150"/>
+          <circle cx="150" cy="220" r="10"/>
+          <circle cx="100" cy="150" r="10"/>
+          <line x1="100" y1="150" x2="160" y2="80"/>
+          <circle cx="160" cy="80" r="8"/>
+          <line x1="160" y1="80" x2="140" y2="50"/>
+          <line x1="160" y1="80" x2="180" y2="50"/>
+          <line x1="140" y1="50" x2="140" y2="35"/>
+          <line x1="180" y1="50" x2="180" y2="35"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="accent-bar"></div>
+  </div>
+</body>
+</html>

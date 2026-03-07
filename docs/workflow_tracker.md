@@ -1,0 +1,42 @@
+# LLM Robot Task Planner — Workflow Tracker
+## Last Updated: 2026-03-07
+
+## Project
+**LLM-Powered Robot Task Planner** — Natural language commands -> LLM task decomposition -> ROS 2 + Gazebo pick-and-place demo.
+
+## Current Blockers
+<!-- Unresolved blockers from any session. Remove when resolved. -->
+
+| Blocker | Since Session | Details |
+|---------|--------------|---------|
+| (none) | — | — |
+
+## Demo Checkpoints
+
+| # | Checkpoint | Status | Artifact | Completed In |
+|---|-----------|--------|----------|-------------|
+| DC1 | Robot spawns and drives with cmd_vel | Not started | Video clip | — |
+| DC2 | Robot navigates room-to-room via Nav2 | Not started | Video clip | — |
+| DC3 | YOLO detects colored cubes | Not started | Screenshot | — |
+| DC4 | Depth pipeline gives correct 3D positions | Not started | Terminal log | — |
+| DC5 | Arm picks up and places a cube | Not started | Video clip | — |
+| DC6 | LLM decomposes commands into tool calls | Not started | Terminal screenshot | — |
+| DC7 | End-to-end Scenario 1 (simple fetch) | Not started | Demo video | — |
+| DC8 | Error recovery — Scenario 2 (search + replan) | Not started | Demo video | — |
+| DC9 | Final polished demo video | Not started | Split-screen video | — |
+
+## Session Index
+
+### Week 1: Foundation
+| # | Date | Branch | Summary | Worklog |
+|---|------|--------|---------|---------|
+| S01 | 2026-03-07 | main | niro-1 env setup: ROS 2 Jazzy, Gazebo Harmonic, Nav2, PyTorch cu128, venv | [S01](worklogs/2026-03-07_S01.md) |
+| S02 | 2026-03-07 | main | Blog formatting fixes for Medium, cover image with real logos, LinkedIn caption | [S02](worklogs/2026-03-07_S02.md) |
+
+### Week 2: Perception + Arm + Agent
+| # | Date | Branch | Summary | Worklog |
+|---|------|--------|---------|---------|
+
+### Week 3: Integration + Demo
+| # | Date | Branch | Summary | Worklog |
+|---|------|--------|---------|---------|
