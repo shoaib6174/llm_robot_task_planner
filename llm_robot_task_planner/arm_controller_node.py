@@ -30,10 +30,14 @@ GRIPPER_CLOSE = -0.2   # radians — fingers closed (gripping)
 
 # Predefined poses: [joint1, joint2, joint3, joint4, joint5]
 # joint1: base rotation (Z axis), negative = left, positive = right
-# joint2: shoulder pitch (Y axis), negative = forward tilt
-# joint3: elbow pitch (Y axis), negative = forward bend
+# joint2: shoulder pitch (Y axis), positive = forward tilt
+# joint3: elbow pitch (Y axis), positive = forward bend
 # joint4: wrist pitch (Y axis), adjusts gripper angle
 # joint5: wrist rotation (Z axis)
+#
+# NOTE: positive joint2/3/4 makes the arm reach FORWARD (+x in base_link).
+# Negative values reach BACKWARD (-x). The arm is mounted at the robot's
+# front-top so forward reach is the correct direction for pick/place.
 POSES = {
     # Arm straight up, out of the way
     'home': [0.0, 0.0, 0.0, 0.0, 0.0],
@@ -41,17 +45,17 @@ POSES = {
     # Arm tucked back, low profile for navigation
     'tuck': [0.0, 0.3, 1.0, 0.8, 0.0],
 
-    # Reach forward, hover ~5cm above cube (z≈0.05m)
-    'pre_grasp': [0.0, -1.3, -0.7, -0.3, 0.0],
+    # Reach forward, hover above cube (r_link z≈0.16m)
+    'pre_grasp': [0.0, 1.1, 0.6, 0.3, 0.0],
 
-    # Lower to cube center height (z≈0.025m for 5cm cube)
-    'grasp': [0.0, -1.5, -0.5, -0.3, 0.0],
+    # Lower to cube level (r_link z≈0.05m, fingers at cube center)
+    'grasp': [0.0, 1.3, 0.7, 0.3, 0.0],
 
-    # Lift cube up after grasping
-    'lift': [0.0, -0.5, -0.3, -0.3, 0.0],
+    # Lift cube up after grasping (r_link z≈0.37m)
+    'lift': [0.0, 0.5, 0.3, 0.3, 0.0],
 
     # Place position — same as pre_grasp height
-    'place': [0.0, -1.3, -0.7, -0.3, 0.0],
+    'place': [0.0, 1.1, 0.6, 0.3, 0.0],
 }
 
 # Time to wait after sending a pose command for the PID to settle (seconds)
