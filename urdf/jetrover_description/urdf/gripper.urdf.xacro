@@ -55,7 +55,7 @@
       upper="1.57"
       effort="1000"
       velocity="10" />
-    <dynamics damping="0.5" friction="0.1"/>
+    <dynamics damping="0.001" friction="0.001"/>
   </joint>
   <link
     name="l_link">
@@ -110,7 +110,7 @@
       upper="1.57"
       effort="1000"
       velocity="10" />
-    <dynamics damping="0.1" friction="0.05"/>
+    <dynamics damping="0.001" friction="0.001"/>
     <mimic
       joint="r_joint"
       multiplier="-1"
@@ -169,7 +169,7 @@
       upper="1.57"
       effort="1000"
       velocity="10" />
-    <dynamics damping="0.1" friction="0.05"/>
+    <dynamics damping="0.001" friction="0.001"/>
     <mimic
       joint="r_joint"
       multiplier="-1"
@@ -228,7 +228,7 @@
       upper="1.57"
       effort="1000"
       velocity="10" />
-    <dynamics damping="0.1" friction="0.05"/>
+    <dynamics damping="0.001" friction="0.001"/>
     <mimic
       joint="r_joint"
       multiplier="1"
@@ -287,7 +287,7 @@
       upper="1.57"
       effort="1000"
       velocity="10" />
-    <dynamics damping="0.1" friction="0.05"/>
+    <dynamics damping="0.001" friction="0.001"/>
     <mimic
       joint="r_joint"
       multiplier="-1"
@@ -346,7 +346,7 @@
       upper="1.57"
       effort="1000"
       velocity="10" />
-    <dynamics damping="0.1" friction="0.05"/>
+    <dynamics damping="0.001" friction="0.001"/>
     <mimic
       joint="r_joint"
       multiplier="1"
