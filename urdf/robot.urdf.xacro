@@ -23,8 +23,8 @@
         </inertial>
     </link>
     <joint name="body_cam_joint" type="fixed">
-        <!-- Mounted at front-top of base_link, tilted 15° down (pitch = 0.26 rad) -->
-        <origin xyz="0.12 0.0 0.06" rpy="0 0.26 0"/>
+        <!-- Mounted at front-top of base_link, tilted 20° down (pitch = 0.35 rad) -->
+        <origin xyz="0.12 0.0 0.06" rpy="0 0.35 0"/>
         <parent link="base_link"/>
         <child link="body_cam_link"/>
     </joint>
@@ -206,19 +206,19 @@
             <update_rate>15</update_rate>
             <always_on>true</always_on>
             <camera>
-                <horizontal_fov>1.047</horizontal_fov>
+                <horizontal_fov>1.57</horizontal_fov>
                 <image>
                     <width>640</width>
                     <height>480</height>
                     <format>R8G8B8</format>
                 </image>
                 <clip>
-                    <near>0.1</near>
+                    <near>0.05</near>
                     <far>10.0</far>
                 </clip>
                 <depth_camera>
                     <clip>
-                        <near>0.1</near>
+                        <near>0.05</near>
                         <far>10.0</far>
                     </clip>
                 </depth_camera>
