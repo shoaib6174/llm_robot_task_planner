@@ -416,19 +416,41 @@ class LLMAgentNode(Node):
         goal.pose.pose.orientation.z = math.sin(yaw / 2.0)
         goal.pose.pose.orientation.w = math.cos(yaw / 2.0)
 
-        # Send goal and wait
-        future = self.nav_client.send_goal_async(goal)
-        rclpy.spin_until_future_complete(self, future, timeout_sec=10.0)
+        # Send goal — use events since MultiThreadedExecutor handles callbacks
+        goal_event = threading.Event()
+        goal_handle_ref = [None]
 
-        goal_handle = future.result()
+        def goal_response_cb(future):
+            goal_handle_ref[0] = future.result()
+            goal_event.set()
+
+        future = self.nav_client.send_goal_async(goal)
+        future.add_done_callback(goal_response_cb)
+
+        if not goal_event.wait(timeout=15.0):
+            return {'success': False, 'error': 'Navigation goal send timed out'}
+
+        goal_handle = goal_handle_ref[0]
         if not goal_handle or not goal_handle.accepted:
             return {'success': False, 'error': 'Navigation goal rejected'}
 
-        # Wait for result
-        result_future = goal_handle.get_result_async()
-        rclpy.spin_until_future_complete(self, result_future, timeout_sec=120.0)
+        self.get_logger().info(f'Navigation goal accepted for {location}')
 
-        result = result_future.result()
+        # Wait for result
+        result_event = threading.Event()
+        result_ref = [None]
+
+        def result_cb(future):
+            result_ref[0] = future.result()
+            result_event.set()
+
+        result_future = goal_handle.get_result_async()
+        result_future.add_done_callback(result_cb)
+
+        if not result_event.wait(timeout=120.0):
+            return {'success': False, 'error': f'Navigation to {location} timed out'}
+
+        result = result_ref[0]
         if result and result.status == GoalStatus.STATUS_SUCCEEDED:
             return {
                 'success': True,
@@ -438,7 +460,7 @@ class LLMAgentNode(Node):
         else:
             return {
                 'success': False,
-                'error': f'Navigation to {location} failed',
+                'error': f'Navigation to {location} failed (status: {result.status if result else "none"})',
             }
 
     def _tool_detect(self, color: str) -> dict:
