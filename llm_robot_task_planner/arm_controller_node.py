@@ -10,6 +10,7 @@ via Gazebo's set_pose service. This is a standard approach in Gazebo demos.
 """
 
 import math
+import os
 import subprocess
 import time
 
@@ -57,6 +58,10 @@ SETTLE_TIME = 3.0
 # Gazebo world name (for set_pose service)
 GZ_WORLD = 'two_room_world'
 
+# Fast Gazebo CLI wrapper — avoids slow `source /opt/ros/jazzy/setup.bash` on every call.
+# Falls back to sourcing if wrapper doesn't exist.
+GZ_FAST_WRAPPER = '/tmp/gz_fast.sh'
+
 
 class ArmControllerNode(Node):
     def __init__(self):
@@ -97,6 +102,7 @@ class ArmControllerNode(Node):
 
         # Simulated grasp state
         self.grasped_object = None  # Name of Gazebo model being held
+        self._cached_robot_pose = None  # (x, y, z, yaw) cached during grasp
 
         # Send initial home pose after a short delay
         self.create_timer(0.5, self.init_pose, callback_group=None)
@@ -235,6 +241,9 @@ class ArmControllerNode(Node):
         self.busy = True
         self.publish_status('picking', f'Starting pick of {obj_name}')
 
+        # Cache robot pose once (robot doesn't move during pick)
+        self._cached_robot_pose = self._gz_get_model_pose('jetrover')
+
         # 1. Open gripper
         self.get_logger().info('Pick: opening gripper')
         self.send_gripper(GRIPPER_OPEN)
@@ -261,6 +270,7 @@ class ArmControllerNode(Node):
         self.get_logger().info('Pick: lifting')
         self.move_to(POSES['lift'], GRIPPER_CLOSE)
 
+        self._cached_robot_pose = None
         self.publish_status('done', f'Pick complete — holding {obj_name}')
         self.busy = False
 
@@ -269,6 +279,9 @@ class ArmControllerNode(Node):
         self.busy = True
         obj_name = self.grasped_object or 'unknown'
         self.publish_status('placing', f'Starting place of {obj_name}')
+
+        # Cache robot pose once (robot doesn't move during place)
+        self._cached_robot_pose = self._gz_get_model_pose('jetrover')
 
         # 1. Move to place position (object follows via teleport)
         self.get_logger().info('Place: moving to place position')
@@ -295,6 +308,7 @@ class ArmControllerNode(Node):
         self.get_logger().info('Place: returning home')
         self.move_to(POSES['home'], GRIPPER_OPEN)
 
+        self._cached_robot_pose = None
         self.publish_status('done', 'Place complete')
         self.busy = False
 
@@ -302,9 +316,8 @@ class ArmControllerNode(Node):
         """Get end-effector position in Gazebo world frame.
 
         Combines the TF lookup (base_footprint→EE) with the robot's
-        actual Gazebo world pose (from gz model command). The /odom
-        topic reports (0,0,0) at startup regardless of spawn position,
-        so we query Gazebo directly.
+        actual Gazebo world pose. Uses cached pose during pick/place
+        (robot doesn't move while arm operates).
         """
         try:
             t = self.tf_buffer.lookup_transform(
@@ -317,8 +330,10 @@ class ArmControllerNode(Node):
             self.get_logger().warn(f'TF lookup failed: {e}')
             return None
 
-        # Get robot's actual world pose from Gazebo
-        robot_pose = self._gz_get_model_pose('jetrover')
+        # Use cached pose during pick/place (avoids slow subprocess per teleport)
+        robot_pose = self._cached_robot_pose
+        if robot_pose is None:
+            robot_pose = self._gz_get_model_pose('jetrover')
         if robot_pose is None:
             self.get_logger().warn('Failed to get robot pose from Gazebo')
             return None
@@ -334,14 +349,21 @@ class ArmControllerNode(Node):
 
         return (world_x, world_y, world_z)
 
+    def _gz_cmd(self, args):
+        """Run a gz command using fast wrapper or fallback to source."""
+        if os.path.isfile(GZ_FAST_WRAPPER):
+            return subprocess.run(
+                [GZ_FAST_WRAPPER] + args,
+                capture_output=True, text=True, timeout=10)
+        return subprocess.run(
+            ['bash', '-c',
+             f'source /opt/ros/jazzy/setup.bash && DISPLAY=:1 gz {" ".join(args)}'],
+            capture_output=True, text=True, timeout=10)
+
     def _gz_get_model_pose(self, model_name):
         """Get model pose from Gazebo. Returns (x, y, z, yaw) or None."""
         try:
-            result = subprocess.run(
-                ['bash', '-c',
-                 f'source /opt/ros/jazzy/setup.bash && DISPLAY=:1 '
-                 f'gz model -m {model_name} --pose 2>/dev/null'],
-                capture_output=True, text=True, timeout=10)
+            result = self._gz_cmd(['model', '-m', model_name, '--pose'])
         except Exception:
             return None
 
@@ -390,15 +412,14 @@ class ArmControllerNode(Node):
             f'position: {{x: {x:.4f}, y: {y:.4f}, z: {z:.4f}}}, '
             f'orientation: {{x: {qx}, y: {qy}, z: {qz}, w: {qw}}}'
         )
-        cmd = (
-            f'gz service -s /world/{GZ_WORLD}/set_pose '
-            f'--reqtype gz.msgs.Pose --reptype gz.msgs.Boolean --timeout 3000 '
-            f"--req '{req}'"
-        )
         try:
-            subprocess.run(
-                ['bash', '-c', f'source /opt/ros/jazzy/setup.bash && DISPLAY=:1 {cmd}'],
-                capture_output=True, timeout=5)
+            self._gz_cmd([
+                'service', '-s', f'/world/{GZ_WORLD}/set_pose',
+                '--reqtype', 'gz.msgs.Pose',
+                '--reptype', 'gz.msgs.Boolean',
+                '--timeout', '3000',
+                '--req', req,
+            ])
         except Exception as e:
             self.get_logger().warn(f'gz set_pose failed for {model_name}: {e}')
 
