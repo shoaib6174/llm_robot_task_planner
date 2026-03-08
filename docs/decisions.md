@@ -39,3 +39,7 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D033 | 2026-03-08 | S08 | Gripper damping=0.001 (extremely low) | r_link inertia ~4e-7 kg·m²; even damping=0.5 creates ratio >1M causing DART solver numerical lockup |
 | D034 | 2026-03-08 | S08 | D_gain=0 for all joints, rely on physical damping | On low-inertia links, velocity spikes instantly; D term saturates at cmd_max opposing P, net PID ≈ 0 |
 | D035 | 2026-03-08 | S08 | Accept joint5 coupling drift from gripper | Cosmetic; wrist rotates ~0.25 rad during gripper operation due to shared Z axis; doesn't affect grasping |
+| D036 | 2026-03-08 | S09 | Simulated grasp via teleport (not physics) | DART 4-bar linkage broken, ODE crashes with 6-joint control; teleport is standard Gazebo demo approach |
+| D037 | 2026-03-08 | S09 | MultiThreadedExecutor for arm controller | Single-threaded blocks TF/joint_state callbacks during time.sleep() in pick/place sequences |
+| D038 | 2026-03-08 | S09 | Cache robot pose during pick/place | Robot stationary during arm ops; saves subprocess call per teleport (~0.6s each) |
+| D039 | 2026-03-08 | S09 | Fast gz wrapper (/tmp/gz_fast.sh) | Pre-exports GZ_CONFIG_PATH + LD_LIBRARY_PATH; avoids sourcing full ROS setup per call |
