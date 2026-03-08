@@ -48,6 +48,8 @@ setup(
             'odom_to_tf = llm_robot_task_planner.odom_to_tf_node:main',
             'perception_node = llm_robot_task_planner.perception_node:main',
             'arm_controller = llm_robot_task_planner.arm_controller_node:main',
+            'world_model = llm_robot_task_planner.world_model_node:main',
+            'llm_agent = llm_robot_task_planner.llm_agent_node:main',
         ],
     },
 )

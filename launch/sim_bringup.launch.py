@@ -225,6 +225,19 @@ def generate_launch_description():
         output='screen',
     )
 
+    # ==================== World Model ====================
+    world_model = Node(
+        package='llm_robot_task_planner',
+        executable='world_model',
+        name='world_model',
+        parameters=[{'use_sim_time': True}],
+        output='screen',
+    )
+
+    # ==================== LLM Agent ====================
+    # Not launched by default — run separately so OPENAI_API_KEY can be set.
+    # To launch: ros2 run llm_robot_task_planner llm_agent
+
     return LaunchDescription([
         set_gz_resource_path,
         gazebo,
@@ -246,4 +259,6 @@ def generate_launch_description():
         perception_node,
         # Arm
         arm_controller,
+        # World model
+        world_model,
     ])

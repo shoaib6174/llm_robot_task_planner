@@ -1,3 +1,6 @@
 ultralytics>=8.0
 opencv-python>=4.8
 numpy
+openai>=1.0
+langchain>=0.2
+langchain-openai>=0.1
