@@ -277,6 +277,8 @@ class LLMAgentNode(Node):
         if not command:
             return
 
+        # Set busy BEFORE spawning thread to prevent race condition
+        self.busy = True
         self.get_logger().info(f'User command: {command}')
         self._publish_response(f'Received: "{command}". Planning...')
 
@@ -287,7 +289,6 @@ class LLMAgentNode(Node):
 
     def _process_command(self, command: str):
         """Process a user command through the LLM agent loop."""
-        self.busy = True
         try:
             self._run_agent_loop(command)
         except Exception as e:
@@ -505,8 +506,9 @@ class LLMAgentNode(Node):
                 if det:
                     return self._detection_result(color, det)
 
-        # Stop rotation
+        # Stop rotation and let AMCL settle
         self.cmd_vel_pub.publish(Twist())
+        time.sleep(2.0)
         return {
             'success': False,
             'message': f'{color} cube not detected after scanning room',
