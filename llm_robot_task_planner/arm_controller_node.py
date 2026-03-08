@@ -12,6 +12,7 @@ via Gazebo's set_pose service. This is a standard approach in Gazebo demos.
 import math
 import os
 import subprocess
+import threading
 import time
 
 import rclpy
@@ -104,6 +105,10 @@ class ArmControllerNode(Node):
         self.grasped_object = None  # Name of Gazebo model being held
         self._cached_robot_pose = None  # (x, y, z, yaw) cached during grasp
 
+        # Background teleport thread — continuously moves grasped object to EE
+        self._teleport_thread = None
+        self._teleport_stop = threading.Event()
+
         # Send initial home pose after a short delay
         self.create_timer(0.5, self.init_pose, callback_group=None)
         self.init_done = False
@@ -157,6 +162,7 @@ class ArmControllerNode(Node):
             if state == 'open':
                 self.send_gripper(GRIPPER_OPEN)
                 if self.grasped_object:
+                    self._stop_teleport_thread()
                     self.grasped_object = None
                 self.publish_status('done', 'Gripper opened')
             elif state == 'close':
@@ -212,22 +218,41 @@ class ArmControllerNode(Node):
 
         self.gripper_target = value
 
+    def _start_teleport_thread(self):
+        """Start background thread that continuously teleports grasped object to EE."""
+        if self._teleport_thread is not None:
+            return
+        self._teleport_stop.clear()
+        self._teleport_thread = threading.Thread(
+            target=self._teleport_loop, daemon=True)
+        self._teleport_thread.start()
+        self.get_logger().info('Teleport thread started')
+
+    def _stop_teleport_thread(self):
+        """Stop background teleport thread."""
+        if self._teleport_thread is None:
+            return
+        self._teleport_stop.set()
+        self._teleport_thread.join(timeout=5.0)
+        self._teleport_thread = None
+        self.get_logger().info('Teleport thread stopped')
+
+    def _teleport_loop(self):
+        """Background loop: teleport grasped object to EE at max subprocess rate."""
+        while not self._teleport_stop.is_set():
+            if self.grasped_object:
+                self.teleport_grasped_to_ee()
+            # Small sleep to avoid busy-spinning if teleport fails fast
+            self._teleport_stop.wait(timeout=0.05)
+
     def move_to(self, target_joints, gripper_value, settle=SETTLE_TIME):
         """Send target pose and wait for PID to settle.
 
-        If holding an object, teleports it to the EE position every 0.5s
-        during the settle wait to prevent it from falling under gravity.
+        If holding an object, the background teleport thread keeps it
+        attached to the EE continuously — no inline teleporting needed.
         """
         self.send_pose(target_joints, gripper_value)
-        if self.grasped_object:
-            # Teleport repeatedly during settle to keep object at EE
-            elapsed = 0.0
-            while elapsed < settle:
-                time.sleep(0.5)
-                elapsed += 0.5
-                self.teleport_grasped_to_ee()
-        else:
-            time.sleep(settle)
+        time.sleep(settle)
 
     def execute_pose(self, pose_name):
         self.busy = True
@@ -262,11 +287,12 @@ class ArmControllerNode(Node):
         self.send_gripper(GRIPPER_CLOSE)
         time.sleep(2.0)
 
-        # 5. Attach object (simulated grasp)
+        # 5. Attach object (simulated grasp) and start continuous teleport
         self.grasped_object = obj_name
+        self._start_teleport_thread()
         self.get_logger().info(f'Pick: attached {obj_name} (simulated grasp)')
 
-        # 6. Lift — teleport object to follow EE
+        # 6. Lift — background thread keeps object at EE
         self.get_logger().info('Pick: lifting')
         self.move_to(POSES['lift'], GRIPPER_CLOSE)
 
@@ -291,7 +317,8 @@ class ArmControllerNode(Node):
         self.get_logger().info('Place: lowering to drop height')
         self.move_to(POSES['grasp'], GRIPPER_CLOSE)
 
-        # 3. Open gripper and release object
+        # 3. Stop teleport thread, open gripper, and release object
+        self._stop_teleport_thread()
         self.get_logger().info('Place: opening gripper')
         self.send_gripper(GRIPPER_OPEN)
         if self.grasped_object:
@@ -402,8 +429,6 @@ class ArmControllerNode(Node):
 
         x, y, z = pos
         self.gz_set_model_pose(self.grasped_object, x, y, z)
-        self.get_logger().info(
-            f'Teleported {self.grasped_object} to ({x:.3f}, {y:.3f}, {z:.3f})')
 
     def gz_set_model_pose(self, model_name, x, y, z, qx=0, qy=0, qz=0, qw=1):
         """Set a Gazebo model's pose via gz service."""
