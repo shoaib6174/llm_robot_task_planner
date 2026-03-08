@@ -204,6 +204,7 @@ def generate_launch_description():
             'use_sim_time': True,
             'autostart': True,
             'node_names': nav2_lifecycle_nodes,
+            'bond_timeout': 0.0,
         }],
     )
 
