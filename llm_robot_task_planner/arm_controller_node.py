@@ -207,12 +207,21 @@ class ArmControllerNode(Node):
         self.gripper_target = value
 
     def move_to(self, target_joints, gripper_value, settle=SETTLE_TIME):
-        """Send target pose and wait for PID to settle."""
+        """Send target pose and wait for PID to settle.
+
+        If holding an object, teleports it to the EE position every 0.5s
+        during the settle wait to prevent it from falling under gravity.
+        """
         self.send_pose(target_joints, gripper_value)
-        time.sleep(settle)
-        # If holding an object, teleport it to follow the EE
         if self.grasped_object:
-            self.teleport_grasped_to_ee()
+            # Teleport repeatedly during settle to keep object at EE
+            elapsed = 0.0
+            while elapsed < settle:
+                time.sleep(0.5)
+                elapsed += 0.5
+                self.teleport_grasped_to_ee()
+        else:
+            time.sleep(settle)
 
     def execute_pose(self, pose_name):
         self.busy = True
@@ -273,7 +282,12 @@ class ArmControllerNode(Node):
         self.get_logger().info('Place: opening gripper')
         self.send_gripper(GRIPPER_OPEN)
         if self.grasped_object:
-            self.teleport_grasped_to_ee(z_offset=-0.03)
+            # Place cube on ground (z=0.025 for 5cm cube center)
+            pos = self.get_ee_world_position()
+            if pos:
+                self.gz_set_model_pose(self.grasped_object, pos[0], pos[1], 0.025)
+                self.get_logger().info(
+                    f'Placed {self.grasped_object} at ({pos[0]:.3f}, {pos[1]:.3f}, 0.025)')
             self.grasped_object = None
         time.sleep(1.5)
 
