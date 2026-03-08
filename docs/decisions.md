@@ -43,3 +43,6 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D037 | 2026-03-08 | S09 | MultiThreadedExecutor for arm controller | Single-threaded blocks TF/joint_state callbacks during time.sleep() in pick/place sequences |
 | D038 | 2026-03-08 | S09 | Cache robot pose during pick/place | Robot stationary during arm ops; saves subprocess call per teleport (~0.6s each) |
 | D039 | 2026-03-08 | S09 | Fast gz wrapper (/tmp/gz_fast.sh) | Pre-exports GZ_CONFIG_PATH + LD_LIBRARY_PATH; avoids sourcing full ROS setup per call |
+| D040 | 2026-03-08 | S10 | Ollama qwen2.5:7b as primary LLM | Local inference on RTX 5090, no API key needed, reliable OpenAI-compatible tool calling |
+| D041 | 2026-03-08 | S10 | Event-based Nav2 callbacks (not spin_until_future_complete) | MultiThreadedExecutor already spinning node; spin_until creates conflicting spin |
+| D042 | 2026-03-08 | S10 | bond_timeout=0 in Nav2 lifecycle manager | Prevents race condition where map_server bond check fails during sim startup |

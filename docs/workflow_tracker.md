@@ -20,7 +20,7 @@
 | DC3 | Color-based cube detection with bboxes | ✅ Verified | Screenshots in docs/artifacts/ | S06 |
 | DC4 | Depth pipeline gives correct 3D positions | ✅ Verified | docs/artifacts/dc4_3d_position_accuracy.md | S07 |
 | DC5 | Arm picks up and places a cube | ✅ Verified (teleport grasp, z delta 0.447m) | Video clip (TBD) | S09 |
-| DC6 | LLM decomposes commands into tool calls | Not started | Terminal screenshot | — |
+| DC6 | LLM decomposes commands into tool calls | ✅ Verified (Ollama qwen2.5:7b, nav works) | Terminal screenshot (TBD) | S10 |
 | DC7 | End-to-end Scenario 1 (simple fetch) | Not started | Demo video | — |
 | DC8 | Error recovery — Scenario 2 (search + replan) | Not started | Demo video | — |
 | DC9 | Final polished demo video | Not started | Split-screen video | — |
@@ -43,6 +43,8 @@
 | S07 | 2026-03-08 | perception | 3D depth pipeline (camera intrinsics + depth + TF2), AMCL tuning, DC4 verified (0.038m close-range) | [S07](worklogs/2026-03-08_S07.md) |
 | S08 | 2026-03-08 | arm-control | Arm PID tuning (PI control, staged commands), gripper fix, full pick/place sequences working | [S08](worklogs/2026-03-08_S08.md) |
 | S09 | 2026-03-08 | arm-control | Simulated grasp via teleport, DC5 verified (cube lifted 0.447m, placed back) | [S09](worklogs/2026-03-08_S09.md) |
+
+| S10 | 2026-03-08 | llm-agent | Ollama qwen2.5:7b setup, Nav2 threading fix, lifecycle bond fix, DC6 verified | [S10](worklogs/2026-03-08_S10.md) |
 
 ### Week 3: Integration + Demo
 | # | Date | Branch | Summary | Worklog |
