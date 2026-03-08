@@ -13,6 +13,7 @@ Supports three LLM providers (auto-detected in this order):
 import json
 import math
 import os
+import re
 import time
 import threading
 
@@ -22,7 +23,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.action import ActionClient
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Twist
 from nav2_msgs.action import NavigateToPose
 from action_msgs.msg import GoalStatus
 
@@ -139,6 +140,8 @@ Rules:
 4. If an object is not found in the expected room, try the other room.
 5. Report what you are doing and why at each step.
 6. If a step fails, explain why and try an alternative approach.
+7. For status queries like "what do you see" or "where are you", use get_robot_status to check the current state and report it. Do NOT take physical actions unless the user asks you to move or manipulate objects.
+8. If the user's command is ambiguous (e.g., "get the cube" without specifying which color), ask for clarification by responding with a question. Do NOT guess.
 
 Think step by step. For each action, explain your reasoning briefly before calling the tool."""
 
@@ -190,6 +193,8 @@ class LLMAgentNode(Node):
             String, '/agent_response', 10)
         self.arm_cmd_pub = self.create_publisher(
             String, '/arm/command', 10)
+        self.cmd_vel_pub = self.create_publisher(
+            Twist, '/cmd_vel', 10)
 
         # Subscribers
         self.create_subscription(
@@ -275,6 +280,8 @@ class LLMAgentNode(Node):
         if not command:
             return
 
+        # Set busy BEFORE spawning thread to prevent race condition
+        self.busy = True
         self.get_logger().info(f'User command: {command}')
         self._publish_response(f'Received: "{command}". Planning...')
 
@@ -285,7 +292,6 @@ class LLMAgentNode(Node):
 
     def _process_command(self, command: str):
         """Process a user command through the LLM agent loop."""
-        self.busy = True
         try:
             self._run_agent_loop(command)
         except Exception as e:
@@ -361,6 +367,24 @@ class LLMAgentNode(Node):
 
             # If the LLM is done (no tool calls, just a text response)
             elif message.content:
+                # Check for garbled tool calls (qwen2.5:7b sometimes outputs
+                # tool calls as text instead of structured function calls)
+                parsed_tool = self._parse_text_tool_call(message.content)
+                if parsed_tool:
+                    fn_name, fn_args = parsed_tool
+                    self.get_logger().info(
+                        f'Recovered garbled tool call: {fn_name}({fn_args})')
+                    self._publish_response(
+                        f'Executing: {fn_name}({json.dumps(fn_args)})')
+                    result = self._execute_tool(fn_name, fn_args)
+                    self.get_logger().info(
+                        f'Tool result: {json.dumps(result)[:200]}')
+                    # Add as user message with result (no tool_call_id)
+                    messages.append({
+                        "role": "user",
+                        "content": f"Tool result for {fn_name}: {json.dumps(result)}",
+                    })
+                    continue
                 self._publish_response(f'Agent: {message.content}')
                 return
 
@@ -371,6 +395,29 @@ class LLMAgentNode(Node):
                 return
 
         self._publish_response('Agent reached maximum iterations. Stopping.')
+
+    def _parse_text_tool_call(self, text: str):
+        """Try to extract a tool call from garbled text output.
+
+        qwen2.5:7b sometimes outputs tool calls as text like:
+          portun {"name": "pick_up", "arguments": {"object_name": "red_cube"}}
+        Returns (fn_name, fn_args) or None.
+        """
+        valid_tools = {
+            'navigate_to', 'detect_object', 'pick_up',
+            'place_object', 'get_robot_status',
+        }
+        # Try to find JSON with "name" and "arguments" keys
+        match = re.search(r'\{[^{}]*"name"\s*:\s*"(\w+)"[^{}]*"arguments"\s*:\s*(\{[^{}]*\})', text)
+        if match:
+            fn_name = match.group(1)
+            if fn_name in valid_tools:
+                try:
+                    fn_args = json.loads(match.group(2))
+                    return (fn_name, fn_args)
+                except json.JSONDecodeError:
+                    pass
+        return None
 
     def _execute_tool(self, name: str, args: dict) -> dict:
         """Execute a tool call and return the result."""
@@ -464,7 +511,7 @@ class LLMAgentNode(Node):
             }
 
     def _tool_detect(self, color: str) -> dict:
-        """Detect a colored cube using perception."""
+        """Detect a colored cube using perception with rotation scan."""
         valid_colors = ['red', 'green', 'blue', 'yellow']
         if color not in valid_colors:
             return {
@@ -472,27 +519,68 @@ class LLMAgentNode(Node):
                 'error': f'Invalid color: {color}. Valid: {valid_colors}',
             }
 
-        # Wait a moment for fresh detections
-        time.sleep(2.0)
+        # Check current detections first (quick check)
+        time.sleep(1.0)
+        det = self._find_detection(color)
+        if det:
+            return self._detection_result(color, det)
 
-        # Check latest detections for the requested color
-        for det in self.latest_detections:
-            if det.get('color') == color:
-                result = {
-                    'success': True,
-                    'object': f'{color}_cube',
-                    'color': color,
-                }
-                if det.get('position_map'):
-                    result['position_map'] = det['position_map']
-                if det.get('depth_m'):
-                    result['depth_m'] = det['depth_m']
-                return result
+        # Not found — do a 360° rotation scan
+        self.get_logger().info(
+            f'Detect: {color} not in view, scanning room...')
+        twist = Twist()
+        twist.angular.z = 0.5  # rad/s rotation
 
+        scan_duration = 14.0  # ~360° at 0.5 rad/s
+        elapsed = 0.0
+        check_interval = 1.0
+
+        while elapsed < scan_duration:
+            self.cmd_vel_pub.publish(twist)
+            time.sleep(check_interval)
+            elapsed += check_interval
+
+            det = self._find_detection(color)
+            if det:
+                # Stop rotation and let AMCL settle
+                self.cmd_vel_pub.publish(Twist())
+                time.sleep(1.0)
+                self.cmd_vel_pub.publish(Twist())
+                time.sleep(2.0)
+                # Re-check to get stable detection
+                det = self._find_detection(color)
+                if det:
+                    return self._detection_result(color, det)
+
+        # Stop rotation and let AMCL settle
+        self.cmd_vel_pub.publish(Twist())
+        time.sleep(1.0)
+        self.cmd_vel_pub.publish(Twist())
+        time.sleep(3.0)
         return {
             'success': False,
-            'message': f'{color} cube not detected in current view',
+            'message': f'{color} cube not detected after scanning room',
         }
+
+    def _find_detection(self, color: str):
+        """Find a detection of the given color in latest_detections."""
+        for det in self.latest_detections:
+            if det.get('color') == color:
+                return det
+        return None
+
+    def _detection_result(self, color: str, det: dict) -> dict:
+        """Build a successful detection result."""
+        result = {
+            'success': True,
+            'object': f'{color}_cube',
+            'color': color,
+        }
+        if det.get('position_map'):
+            result['position_map'] = det['position_map']
+        if det.get('depth_m'):
+            result['depth_m'] = det['depth_m']
+        return result
 
     def _tool_pick(self, object_name: str) -> dict:
         """Pick up an object using the arm controller."""
