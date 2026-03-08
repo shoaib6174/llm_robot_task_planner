@@ -15,6 +15,8 @@ import time
 
 import rclpy
 from rclpy.node import Node
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 from std_msgs.msg import Float64, String
 from sensor_msgs.msg import JointState
 import tf2_ros
@@ -78,8 +80,12 @@ class ArmControllerNode(Node):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
-        # Command subscriber — accepts JSON commands
-        self.create_subscription(String, '/arm/command', self.command_cb, 10)
+        # Command subscriber — uses reentrant callback group so TF and
+        # joint_state callbacks can run during blocking pick/place sequences
+        self.cmd_cb_group = ReentrantCallbackGroup()
+        self.create_subscription(
+            String, '/arm/command', self.command_cb, 10,
+            callback_group=self.cmd_cb_group)
 
         # Status publisher
         self.status_pub = self.create_publisher(String, '/arm/status', 10)
@@ -203,12 +209,9 @@ class ArmControllerNode(Node):
     def move_to(self, target_joints, gripper_value, settle=SETTLE_TIME):
         """Send target pose and wait for PID to settle."""
         self.send_pose(target_joints, gripper_value)
-        time.sleep(settle)
+        self.ros_sleep(settle)
         # If holding an object, teleport it to follow the EE
         if self.grasped_object:
-            # Spin to get fresh TF and odom data (blocked during sleep)
-            for _ in range(20):
-                rclpy.spin_once(self, timeout_sec=0.05)
             self.teleport_grasped_to_ee()
 
     def execute_pose(self, pose_name):
@@ -270,9 +273,6 @@ class ArmControllerNode(Node):
         self.get_logger().info('Place: opening gripper')
         self.send_gripper(GRIPPER_OPEN)
         if self.grasped_object:
-            # Spin to get fresh TF, then teleport to drop position
-            for _ in range(20):
-                rclpy.spin_once(self, timeout_sec=0.05)
             self.teleport_grasped_to_ee(z_offset=-0.03)
             self.grasped_object = None
         time.sleep(1.5)
@@ -398,7 +398,9 @@ class ArmControllerNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = ArmControllerNode()
-    rclpy.spin(node)
+    executor = MultiThreadedExecutor(num_threads=4)
+    executor.add_node(node)
+    executor.spin()
     node.destroy_node()
     rclpy.shutdown()
 
