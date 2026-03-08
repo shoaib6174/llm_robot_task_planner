@@ -140,6 +140,8 @@ Rules:
 4. If an object is not found in the expected room, try the other room.
 5. Report what you are doing and why at each step.
 6. If a step fails, explain why and try an alternative approach.
+7. For status queries like "what do you see" or "where are you", use get_robot_status to check the current state and report it. Do NOT take physical actions unless the user asks you to move or manipulate objects.
+8. If the user's command is ambiguous (e.g., "get the cube" without specifying which color), ask for clarification by responding with a question. Do NOT guess.
 
 Think step by step. For each action, explain your reasoning briefly before calling the tool."""
 
@@ -540,9 +542,11 @@ class LLMAgentNode(Node):
 
             det = self._find_detection(color)
             if det:
-                # Stop rotation
+                # Stop rotation and let AMCL settle
                 self.cmd_vel_pub.publish(Twist())
-                time.sleep(0.5)
+                time.sleep(1.0)
+                self.cmd_vel_pub.publish(Twist())
+                time.sleep(2.0)
                 # Re-check to get stable detection
                 det = self._find_detection(color)
                 if det:
@@ -550,7 +554,9 @@ class LLMAgentNode(Node):
 
         # Stop rotation and let AMCL settle
         self.cmd_vel_pub.publish(Twist())
-        time.sleep(2.0)
+        time.sleep(1.0)
+        self.cmd_vel_pub.publish(Twist())
+        time.sleep(3.0)
         return {
             'success': False,
             'message': f'{color} cube not detected after scanning room',
