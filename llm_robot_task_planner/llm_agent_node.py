@@ -13,6 +13,7 @@ Supports three LLM providers (auto-detected in this order):
 import json
 import math
 import os
+import re
 import time
 import threading
 
@@ -364,6 +365,24 @@ class LLMAgentNode(Node):
 
             # If the LLM is done (no tool calls, just a text response)
             elif message.content:
+                # Check for garbled tool calls (qwen2.5:7b sometimes outputs
+                # tool calls as text instead of structured function calls)
+                parsed_tool = self._parse_text_tool_call(message.content)
+                if parsed_tool:
+                    fn_name, fn_args = parsed_tool
+                    self.get_logger().info(
+                        f'Recovered garbled tool call: {fn_name}({fn_args})')
+                    self._publish_response(
+                        f'Executing: {fn_name}({json.dumps(fn_args)})')
+                    result = self._execute_tool(fn_name, fn_args)
+                    self.get_logger().info(
+                        f'Tool result: {json.dumps(result)[:200]}')
+                    # Add as user message with result (no tool_call_id)
+                    messages.append({
+                        "role": "user",
+                        "content": f"Tool result for {fn_name}: {json.dumps(result)}",
+                    })
+                    continue
                 self._publish_response(f'Agent: {message.content}')
                 return
 
@@ -374,6 +393,29 @@ class LLMAgentNode(Node):
                 return
 
         self._publish_response('Agent reached maximum iterations. Stopping.')
+
+    def _parse_text_tool_call(self, text: str):
+        """Try to extract a tool call from garbled text output.
+
+        qwen2.5:7b sometimes outputs tool calls as text like:
+          portun {"name": "pick_up", "arguments": {"object_name": "red_cube"}}
+        Returns (fn_name, fn_args) or None.
+        """
+        valid_tools = {
+            'navigate_to', 'detect_object', 'pick_up',
+            'place_object', 'get_robot_status',
+        }
+        # Try to find JSON with "name" and "arguments" keys
+        match = re.search(r'\{[^{}]*"name"\s*:\s*"(\w+)"[^{}]*"arguments"\s*:\s*(\{[^{}]*\})', text)
+        if match:
+            fn_name = match.group(1)
+            if fn_name in valid_tools:
+                try:
+                    fn_args = json.loads(match.group(2))
+                    return (fn_name, fn_args)
+                except json.JSONDecodeError:
+                    pass
+        return None
 
     def _execute_tool(self, name: str, args: dict) -> dict:
         """Execute a tool call and return the result."""
