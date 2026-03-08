@@ -46,3 +46,6 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D040 | 2026-03-08 | S10 | Ollama qwen2.5:7b as primary LLM | Local inference on RTX 5090, no API key needed, reliable OpenAI-compatible tool calling |
 | D041 | 2026-03-08 | S10 | Event-based Nav2 callbacks (not spin_until_future_complete) | MultiThreadedExecutor already spinning node; spin_until creates conflicting spin |
 | D042 | 2026-03-08 | S10 | bond_timeout=0 in Nav2 lifecycle manager | Prevents race condition where map_server bond check fails during sim startup |
+| D043 | 2026-03-08 | S11 | Rotation scan at 0.5 rad/s for detection | Camera HFOV=90°; cubes can be anywhere in 360°; 14s scan covers full rotation |
+| D044 | 2026-03-08 | S11 | Parse garbled text tool calls with regex | qwen2.5:7b intermittently outputs tool calls as text; recovery avoids task failure |
+| D045 | 2026-03-08 | S11 | 2s AMCL settle delay after rotation scan | Continuous rotation disrupts AMCL particle filter; needs time to reconverge |

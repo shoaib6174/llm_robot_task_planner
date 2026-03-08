@@ -21,7 +21,7 @@
 | DC4 | Depth pipeline gives correct 3D positions | ✅ Verified | docs/artifacts/dc4_3d_position_accuracy.md | S07 |
 | DC5 | Arm picks up and places a cube | ✅ Verified (teleport grasp, z delta 0.447m) | Video clip (TBD) | S09 |
 | DC6 | LLM decomposes commands into tool calls | ✅ Verified (Ollama qwen2.5:7b, nav works) | Terminal screenshot (TBD) | S10 |
-| DC7 | End-to-end Scenario 1 (simple fetch) | Not started | Demo video | — |
+| DC7 | End-to-end Scenario 1 (simple fetch) | ✅ Verified (nav→detect→pick→nav→place, 76s) | Demo video (TBD) | S11 |
 | DC8 | Error recovery — Scenario 2 (search + replan) | Not started | Demo video | — |
 | DC9 | Final polished demo video | Not started | Split-screen video | — |
 
@@ -49,3 +49,4 @@
 ### Week 3: Integration + Demo
 | # | Date | Branch | Summary | Worklog |
 |---|------|--------|---------|---------|
+| S11 | 2026-03-08 | integration | DC7 verified: Scenario 1 end-to-end (nav→detect→pick→nav→place, 76s) | [S11](worklogs/2026-03-08_S11.md) |
