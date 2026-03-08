@@ -4,8 +4,10 @@ Receives user commands on /user_command, uses an LLM to decompose them
 into tool calls (navigate, detect, pick, place, status), and executes
 each step via ROS 2 topics/actions.
 
-Supports Groq (default, free tier) or OpenAI for LLM inference.
-Set GROQ_API_KEY or OPENAI_API_KEY environment variable.
+Supports three LLM providers (auto-detected in this order):
+  1. Ollama (local) — no API key needed, runs on GPU
+  2. Groq (free tier) — set GROQ_API_KEY
+  3. OpenAI — set OPENAI_API_KEY
 """
 
 import json
@@ -147,21 +149,33 @@ class LLMAgentNode(Node):
 
         self.cb_group = ReentrantCallbackGroup()
 
-        # LLM client — prefer Groq (free), fall back to OpenAI
+        # LLM client — prefer Ollama (local), then Groq (free), then OpenAI
         self.declare_parameter('llm_provider', 'auto')
         provider = self.get_parameter('llm_provider').value
 
         if provider == 'auto':
-            if os.environ.get('GROQ_API_KEY'):
-                provider = 'groq'
-            elif os.environ.get('OPENAI_API_KEY'):
-                provider = 'openai'
-            else:
-                self.get_logger().error(
-                    'No API key found. Set GROQ_API_KEY or OPENAI_API_KEY.')
-                raise RuntimeError('No LLM API key configured')
+            # Check if Ollama is running locally
+            import urllib.request
+            try:
+                urllib.request.urlopen('http://localhost:11434/api/tags', timeout=2)
+                provider = 'ollama'
+            except Exception:
+                if os.environ.get('GROQ_API_KEY'):
+                    provider = 'groq'
+                elif os.environ.get('OPENAI_API_KEY'):
+                    provider = 'openai'
+                else:
+                    self.get_logger().error(
+                        'No LLM available. Start Ollama or set GROQ/OPENAI API key.')
+                    raise RuntimeError('No LLM provider available')
 
-        if provider == 'groq':
+        if provider == 'ollama':
+            self.client = OpenAI(
+                base_url='http://localhost:11434/v1',
+                api_key='ollama',  # Ollama doesn't need a real key
+            )
+            self.model = 'qwen2.5:7b'
+        elif provider == 'groq':
             self.client = Groq()
             self.model = 'llama-3.3-70b-versatile'
         else:
