@@ -22,7 +22,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.action import ActionClient
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Twist
 from nav2_msgs.action import NavigateToPose
 from action_msgs.msg import GoalStatus
 
@@ -190,6 +190,8 @@ class LLMAgentNode(Node):
             String, '/agent_response', 10)
         self.arm_cmd_pub = self.create_publisher(
             String, '/arm/command', 10)
+        self.cmd_vel_pub = self.create_publisher(
+            Twist, '/cmd_vel', 10)
 
         # Subscribers
         self.create_subscription(
@@ -464,7 +466,7 @@ class LLMAgentNode(Node):
             }
 
     def _tool_detect(self, color: str) -> dict:
-        """Detect a colored cube using perception."""
+        """Detect a colored cube using perception with rotation scan."""
         valid_colors = ['red', 'green', 'blue', 'yellow']
         if color not in valid_colors:
             return {
@@ -472,27 +474,63 @@ class LLMAgentNode(Node):
                 'error': f'Invalid color: {color}. Valid: {valid_colors}',
             }
 
-        # Wait a moment for fresh detections
-        time.sleep(2.0)
+        # Check current detections first (quick check)
+        time.sleep(1.0)
+        det = self._find_detection(color)
+        if det:
+            return self._detection_result(color, det)
 
-        # Check latest detections for the requested color
-        for det in self.latest_detections:
-            if det.get('color') == color:
-                result = {
-                    'success': True,
-                    'object': f'{color}_cube',
-                    'color': color,
-                }
-                if det.get('position_map'):
-                    result['position_map'] = det['position_map']
-                if det.get('depth_m'):
-                    result['depth_m'] = det['depth_m']
-                return result
+        # Not found — do a 360° rotation scan
+        self.get_logger().info(
+            f'Detect: {color} not in view, scanning room...')
+        twist = Twist()
+        twist.angular.z = 0.5  # rad/s rotation
 
+        scan_duration = 14.0  # ~360° at 0.5 rad/s
+        elapsed = 0.0
+        check_interval = 1.0
+
+        while elapsed < scan_duration:
+            self.cmd_vel_pub.publish(twist)
+            time.sleep(check_interval)
+            elapsed += check_interval
+
+            det = self._find_detection(color)
+            if det:
+                # Stop rotation
+                self.cmd_vel_pub.publish(Twist())
+                time.sleep(0.5)
+                # Re-check to get stable detection
+                det = self._find_detection(color)
+                if det:
+                    return self._detection_result(color, det)
+
+        # Stop rotation
+        self.cmd_vel_pub.publish(Twist())
         return {
             'success': False,
-            'message': f'{color} cube not detected in current view',
+            'message': f'{color} cube not detected after scanning room',
         }
+
+    def _find_detection(self, color: str):
+        """Find a detection of the given color in latest_detections."""
+        for det in self.latest_detections:
+            if det.get('color') == color:
+                return det
+        return None
+
+    def _detection_result(self, color: str, det: dict) -> dict:
+        """Build a successful detection result."""
+        result = {
+            'success': True,
+            'object': f'{color}_cube',
+            'color': color,
+        }
+        if det.get('position_map'):
+            result['position_map'] = det['position_map']
+        if det.get('depth_m'):
+            result['depth_m'] = det['depth_m']
+        return result
 
     def _tool_pick(self, object_name: str) -> dict:
         """Pick up an object using the arm controller."""
