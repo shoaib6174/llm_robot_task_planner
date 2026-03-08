@@ -50,3 +50,4 @@
 | # | Date | Branch | Summary | Worklog |
 |---|------|--------|---------|---------|
 | S11 | 2026-03-08 | integration | DC7+DC8 verified: Scenario 1 (76s) + Scenario 2 search+replan | [S11](worklogs/2026-03-08_S11.md) |
+| S12 | 2026-03-08 | main | Teleport bounce fix, 5 scenario tests (4 pass), Isaac Sim 5.1.0 installing on /mnt/ssd | [S12](worklogs/2026-03-08_S12.md) |

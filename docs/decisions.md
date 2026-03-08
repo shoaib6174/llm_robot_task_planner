@@ -49,3 +49,7 @@ Searchable index of all non-obvious architectural and design decisions. Each ent
 | D043 | 2026-03-08 | S11 | Rotation scan at 0.5 rad/s for detection | Camera HFOV=90°; cubes can be anywhere in 360°; 14s scan covers full rotation |
 | D044 | 2026-03-08 | S11 | Parse garbled text tool calls with regex | qwen2.5:7b intermittently outputs tool calls as text; recovery avoids task failure |
 | D045 | 2026-03-08 | S11 | 2s AMCL settle delay after rotation scan | Continuous rotation disrupts AMCL particle filter; needs time to reconverge |
+| D046 | 2026-03-08 | S12 | Background teleport thread (not faster inline loop) | Thread decouples teleport rate from arm motion timing; runs during nav too |
+| D047 | 2026-03-08 | S12 | Isaac Sim 5.1.0 pip install (not Omniverse Launcher or Docker) | Headless server, need ROS 2 integration, pip is simplest |
+| D048 | 2026-03-08 | S12 | Python 3.11 venv separate from ROS venv | Isaac Sim requires 3.11; ROS 2 Jazzy uses 3.12; separate venvs avoid conflicts |
+| D049 | 2026-03-08 | S12 | Install on NVMe SSD (/mnt/ssd) not boot drive | Boot drive 56% used; Isaac Sim needs 50+ GB; SSD has 870GB free |
