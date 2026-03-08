@@ -4,11 +4,13 @@ Receives user commands on /user_command, uses an LLM to decompose them
 into tool calls (navigate, detect, pick, place, status), and executes
 each step via ROS 2 topics/actions.
 
-Uses OpenAI function calling for structured tool use.
+Supports Groq (default, free tier) or OpenAI for LLM inference.
+Set GROQ_API_KEY or OPENAI_API_KEY environment variable.
 """
 
 import json
 import math
+import os
 import time
 import threading
 
@@ -22,6 +24,7 @@ from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import NavigateToPose
 from action_msgs.msg import GoalStatus
 
+from groq import Groq
 from openai import OpenAI
 
 
@@ -144,10 +147,29 @@ class LLMAgentNode(Node):
 
         self.cb_group = ReentrantCallbackGroup()
 
-        # OpenAI client
-        self.declare_parameter('openai_model', 'gpt-4o-mini')
-        self.model = self.get_parameter('openai_model').value
-        self.client = OpenAI()  # reads OPENAI_API_KEY from env
+        # LLM client — prefer Groq (free), fall back to OpenAI
+        self.declare_parameter('llm_provider', 'auto')
+        provider = self.get_parameter('llm_provider').value
+
+        if provider == 'auto':
+            if os.environ.get('GROQ_API_KEY'):
+                provider = 'groq'
+            elif os.environ.get('OPENAI_API_KEY'):
+                provider = 'openai'
+            else:
+                self.get_logger().error(
+                    'No API key found. Set GROQ_API_KEY or OPENAI_API_KEY.')
+                raise RuntimeError('No LLM API key configured')
+
+        if provider == 'groq':
+            self.client = Groq()
+            self.model = 'llama-3.3-70b-versatile'
+        else:
+            self.client = OpenAI()
+            self.model = 'gpt-4o-mini'
+
+        self.declare_parameter('llm_model', self.model)
+        self.model = self.get_parameter('llm_model').value
 
         # Publishers
         self.response_pub = self.create_publisher(
