@@ -209,7 +209,7 @@ class ArmControllerNode(Node):
     def move_to(self, target_joints, gripper_value, settle=SETTLE_TIME):
         """Send target pose and wait for PID to settle."""
         self.send_pose(target_joints, gripper_value)
-        self.ros_sleep(settle)
+        time.sleep(settle)
         # If holding an object, teleport it to follow the EE
         if self.grasped_object:
             self.teleport_grasped_to_ee()
